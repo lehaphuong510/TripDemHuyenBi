@@ -18,95 +18,114 @@ def change_step(new_step):
 
 step = st.session_state.step
 
-# --- 2. CSS CHỐNG LỖI TRÌNH DUYỆT (KHÔNG DÙNG :has) ---
-def get_bg(s): return "linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%)" if step == s else "#E0E0E0"
-def get_tx(s): return "#FFFFFF" if step == s else "#666666"
+# --- 2. CSS CHỐNG LỖI (DÙNG REPLACE THAY VÌ F-STRING) ---
+active_bg = "linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%)"
+inactive_bg = "#E0E0E0"
+active_text = "#FFFFFF"
+inactive_text = "#666666"
 
-st.markdown(f"""
+css_template = """
 <style>
     /* --------------------------------- */
-    /* GIAO DIỆN CHUNG & TITLE TỐI ƯU    */
+    /* GIAO DIỆN CHUNG                   */
     /* --------------------------------- */
-    .page-title {{ 
+    .nowrap-text { word-break: keep-all !important; white-space: nowrap !important; }
+    
+    .page-title { 
         text-align: left; text-transform: uppercase; 
         background: linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%); 
         -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
         font-weight: 900; font-size: 2.2rem; margin-bottom: 0.2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); 
-    }}
-    .page-subtitle {{ text-align: left; color: #D4AF37; font-weight: bold; font-size: 1.2rem; margin-bottom: 2rem; }}
+    }
+    .page-subtitle { text-align: left; color: #D4AF37; font-weight: bold; font-size: 1.2rem; margin-bottom: 2rem; }
+    .section-title { text-align: left; text-transform: uppercase; color: #0F5132; font-weight: 800; font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid #D4AF37; padding-bottom: 5px; }
     
-    .section-title {{ text-align: left; text-transform: uppercase; color: #0F5132; font-weight: 800; font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid #D4AF37; padding-bottom: 5px; }}
-    .slot-card {{ border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; overflow: hidden; }}
-    .slot-header {{ background: linear-gradient(135deg, #0F5132 0%, #198754 100%); color: white; text-align: center; padding: 6px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }}
-    .slot-body {{ background-color: #f9fbf9; text-align: center; padding: 8px; border: 1px solid #198754; border-top: none; border-radius: 0 0 6px 6px; font-size: 1rem; color: #333; }}
-    .slot-highlight {{ color: #0F5132; font-size: 1.6rem; font-weight: 900; margin: 0 6px; }}
-    .person-box {{ border-left: 4px solid #D4AF37; padding-left: 15px; margin-bottom: 20px; background-color: #faf8f5; padding: 15px; border-radius: 0 8px 8px 0; }}
-    .info-card {{ text-align: center; padding: 15px 5px; background-color: #f0f7f4; border-radius: 8px; height: 100%; border-bottom: 3px solid #198754; }}
-    .info-icon {{ font-size: 2rem; margin-bottom: 10px; }}
-    .info-title {{ font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase; }}
-    .info-desc {{ font-size: 0.85rem; color: #444; }}
-    .timeline-item {{ margin-bottom: 10px; padding-left: 15px; border-left: 2px dashed #D4AF37; }}
-    .timeline-time {{ font-weight: bold; color: #198754; width: 60px; display: inline-block; }}
-    .prep-card {{ text-align: center; padding: 15px 10px; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 15px; height: 90%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
-    .prep-icon {{ font-size: 2.5rem; margin-bottom: 10px; }}
-    .prep-title {{ font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; }}
-    .prep-desc {{ font-size: 0.8rem; color: #666; line-height: 1.4; }}
+    .slot-card { border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; overflow: hidden; }
+    .slot-header { background: linear-gradient(135deg, #0F5132 0%, #198754 100%); color: white; text-align: center; padding: 6px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+    .slot-body { background-color: #f9fbf9; text-align: center; padding: 8px; border: 1px solid #198754; border-top: none; border-radius: 0 0 6px 6px; font-size: 1rem; color: #333; }
+    .slot-highlight { color: #0F5132; font-size: 1.6rem; font-weight: 900; margin: 0 6px; }
+    
+    .person-box { border-left: 4px solid #D4AF37; padding-left: 15px; margin-bottom: 20px; background-color: #faf8f5; padding: 15px; border-radius: 0 8px 8px 0; }
+    .info-card { text-align: center; padding: 15px 5px; background-color: #f0f7f4; border-radius: 8px; height: 100%; border-bottom: 3px solid #198754; }
+    .info-icon { font-size: 2rem; margin-bottom: 10px; }
+    .info-title { font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase; }
+    .info-desc { font-size: 0.85rem; color: #444; }
+    .timeline-item { margin-bottom: 10px; padding-left: 15px; border-left: 2px dashed #D4AF37; }
+    .timeline-time { font-weight: bold; color: #198754; width: 60px; display: inline-block; }
+    .prep-card { text-align: center; padding: 15px 10px; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 15px; height: 90%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .prep-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .prep-title { font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; }
+    .prep-desc { font-size: 0.8rem; color: #666; line-height: 1.4; }
 
     /* ------------------------------------------------------------------ */
-    /* ĐỒNG BỘ MÀU 100% CHO NÚT TIẾP TỤC, QUAY LẠI, XÁC NHẬN             */
+    /* FIX NÚT SUBMIT FORM + NÚT TIẾP TỤC/QUAY LẠI                        */
     /* ------------------------------------------------------------------ */
-    button[kind="primary"] {{
+    button[kind="primary"], div[data-testid="stFormSubmitButton"] button {
         background: linear-gradient(135deg, #D4AF37 0%, #198754 100%) !important;
         color: white !important; text-transform: uppercase !important;
         font-weight: bold !important; border: none !important; border-radius: 8px !important;
         padding: 12px !important;
-    }}
-    button[kind="primary"]:hover {{
+    }
+    button[kind="primary"]:hover, div[data-testid="stFormSubmitButton"] button:hover {
         background: linear-gradient(135deg, #198754 0%, #D4AF37 100%) !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
-    }}
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; color: white !important;
+    }
 
     /* ------------------------------------------------------------------ */
-    /* THANH CHEVRON (GIAO DIỆN LAPTOP CƠ BẢN)                            */
+    /* THANH CHEVRON ĐỊNH HƯỚNG (GIAO DIỆN LAPTOP CŨ THÀNH CÔNG)          */
     /* ------------------------------------------------------------------ */
-    .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {{
+    .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {
         height: 55px !important; width: 100% !important; border-radius: 0 !important; 
         border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important;
-    }}
-    .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p {{
-        white-space: pre-wrap !important; font-size: 0.8rem !important; 
+    }
+    .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p {
+        white-space: pre-wrap !important; font-size: 0.85rem !important; 
         font-weight: 800 !important; line-height: 1.2 !important; margin: 0 !important; text-align: center !important;
-    }}
+    }
 
-    /* Cắt hình mũi tên bằng % (có một khoảng hở nhỏ cực kỳ tinh tế giữa các bước) */
-    .st-key-step1 button {{ background: {get_bg(1)} !important; clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%) !important; }}
-    .st-key-step1 button p {{ color: {get_tx(1)} !important; }}
+    /* Shape & Màu Bước 1 */
+    .st-key-step1 button { background: BG1 !important; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%) !important; padding-right: 15px !important; }
+    .st-key-step1 button p { color: TX1 !important; }
 
-    .st-key-step2 button {{ background: {get_bg(2)} !important; clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%, 8% 50%) !important; }}
-    .st-key-step2 button p {{ color: {get_tx(2)} !important; }}
+    /* Shape & Màu Bước 2 */
+    .st-key-step2 button { background: BG2 !important; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%) !important; width: calc(100% + 24px) !important; margin-left: -24px !important; padding-left: 15px !important; padding-right: 15px !important; }
+    .st-key-step2 button p { color: TX2 !important; }
 
-    .st-key-step3 button {{ background: {get_bg(3)} !important; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 8% 50%) !important; }}
-    .st-key-step3 button p {{ color: {get_tx(3)} !important; }}
+    /* Shape & Màu Bước 3 */
+    .st-key-step3 button { background: BG3 !important; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15px 50%) !important; width: calc(100% + 24px) !important; margin-left: -24px !important; padding-left: 20px !important; }
+    .st-key-step3 button p { color: TX3 !important; }
 
-    .st-key-step1 button:hover, .st-key-step2 button:hover, .st-key-step3 button:hover {{ opacity: 0.8 !important; }}
+    .st-key-step1 button:hover, .st-key-step2 button:hover, .st-key-step3 button:hover { opacity: 0.8 !important; border-color: transparent !important; }
 
     /* ------------------------------------------------------------------ */
     /* TỐI ƯU HÓA HOÀN TOÀN CHO ĐIỆN THOẠI (DƯỚI 640PX)                  */
     /* ------------------------------------------------------------------ */
-    @media only screen and (max-width: 640px) {{
-        /* Ép rớt dòng chữ Title 1 cách mượt mà */
-        .page-title {{ font-size: 1.8rem !important; text-align: center !important; }}
-        .page-subtitle {{ text-align: center !important; }}
+    @media only screen and (max-width: 640px) {
+        /* Chữ Title */
+        .page-title { font-size: 1.8rem !important; text-align: center !important; }
+        .page-subtitle { text-align: center !important; }
         
-        /* Chuyển Chevron thành thanh bo góc xếp dọc (Đẹp và dễ đọc hơn) */
-        .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {{
+        /* FIX CHỮ FORM QUÁ TO BỊ RỚT DÒNG */
+        h4 { font-size: 1.05rem !important; line-height: 1.4 !important; margin-bottom: 0.5rem !important; }
+        
+        /* Chuyển Chevron thành thanh dọc bo góc để không bị móp méo */
+        .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {
             height: auto !important; padding: 12px 10px !important; margin-bottom: 5px !important;
-            clip-path: none !important; border-radius: 8px !important;
-        }}
-        .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p {{ font-size: 1rem !important; }}
-    }}
+            clip-path: none !important; border-radius: 8px !important; 
+            width: 100% !important; margin-left: 0 !important;
+        }
+        .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p { font-size: 0.95rem !important; }
+    }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+# Bơm màu an toàn tuyệt đối
+css = css_template.replace("BG1", active_bg if step == 1 else inactive_bg).replace("TX1", active_text if step == 1 else inactive_text)
+css = css.replace("BG2", active_bg if step == 2 else inactive_bg).replace("TX2", active_text if step == 2 else inactive_text)
+css = css.replace("BG3", active_bg if step == 3 else inactive_bg).replace("TX3", active_text if step == 3 else inactive_text)
+
+st.markdown(css, unsafe_allow_html=True)
+
 
 # --- 3. KẾT NỐI GOOGLE SHEETS & CACHING ---
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
