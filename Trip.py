@@ -120,7 +120,7 @@ def prev_step(): st.session_state.step -= 1
 
 # --- 3. TITLE & SỐ SUẤT ---
 st.markdown("<div class='page-title nowrap-text'>ĐĂNG KÝ TRIP ĐÊM HUYỀN BÍ</div>", unsafe_allow_html=True)
-st.markdown("<div class='page-subtitle'>THỜI GIAN: 13:00 - 22:00</div>", unsafe_allow_html=True)
+st.markdown("<div class='page-subtitle'>THỜI GIAN | 13:00 - 22:00</div>", unsafe_allow_html=True)
 
 cols = st.columns(len(blocks_info))
 for i, block in enumerate(blocks_info):
@@ -155,7 +155,7 @@ if st.session_state.step == 1:
     c4.markdown("<div class='info-card'><div class='info-icon'>💰</div><div class='info-title'>Chi phí</div><div class='info-desc'>880.000đ / người<br>Bao gồm xe, ăn uống, bảo hiểm...</div></div>", unsafe_allow_html=True)
     
     st.divider()
-    st.button("Tiếp tục: LỊCH TRÌNH & VẬT DỤNG ➡️", on_click=next_step, use_container_width=True)
+    st.button("Tiếp tục: LỊCH TRÌNH & VẬT DỤNG ▶️", on_click=next_step, use_container_width=True)
 
 elif st.session_state.step == 2:
     st.markdown("<div class='step-indicator'>BƯỚC 2/3: LỊCH TRÌNH & VẬT DỤNG 🎒</div>", unsafe_allow_html=True)
@@ -186,14 +186,14 @@ elif st.session_state.step == 2:
     
     st.divider()
     b1, b2 = st.columns(2)
-    b1.button("⬅️ Quay lại: THÔNG TIN TRIP", on_click=prev_step, use_container_width=True)
-    b2.button("Tiếp tục: ĐĂNG KÝ & THANH TOÁN ➡️", on_click=next_step, use_container_width=True)
+    b1.button("◀️ Quay lại: THÔNG TIN TRIP", on_click=prev_step, use_container_width=True)
+    b2.button("Tiếp tục: ĐĂNG KÝ & THANH TOÁN ▶️", on_click=next_step, use_container_width=True)
 
 elif st.session_state.step == 3:
     st.markdown("<div class='step-indicator'>BƯỚC 3/3: ĐĂNG KÝ & THANH TOÁN 📝</div>", unsafe_allow_html=True)
     
     b_back, _ = st.columns([1, 2])
-    b_back.button("⬅️ Quay lại: Lịch trình & Vật dụng", on_click=prev_step)
+    b_back.button("◀️ Quay lại: Lịch trình & Vật dụng", on_click=prev_step)
     
     st.markdown("<div class='section-title nowrap-text'>3. ĐIỀN THÔNG TIN</div>", unsafe_allow_html=True)
     if not trip_options:
