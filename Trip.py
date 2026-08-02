@@ -18,31 +18,33 @@ def change_step(new_step):
 
 step = st.session_state.step
 
-# --- 2. CSS "CHỐNG ĐẠN" (KHÔNG DÙNG CLASS KEY) ---
+# --- 2. CSS RESPONSIVE & SỬA LỖI ---
 active_bg = "linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%)"
 inactive_bg = "#E0E0E0"
 active_text = "#FFFFFF"
 inactive_text = "#666666"
 
-c1_bg = active_bg if step == 1 else inactive_bg
-c1_tx = active_text if step == 1 else inactive_text
-c2_bg = active_bg if step == 2 else inactive_bg
-c2_tx = active_text if step == 2 else inactive_text
-c3_bg = active_bg if step == 3 else inactive_bg
-c3_tx = active_text if step == 3 else inactive_text
-
 st.markdown(f"""
 <style>
-    /* CHUNG */
+    /* --------------------------------- */
+    /* GIAO DIỆN CHUNG                   */
+    /* --------------------------------- */
     .nowrap-text {{ word-break: keep-all !important; white-space: nowrap !important; }}
-    @media only screen and (max-width: 600px) {{ .nowrap-text {{ white-space: nowrap !important; overflow-x: auto !important; }} }}
-    .page-title {{ text-align: left; text-transform: uppercase; background: linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; font-size: 2.2rem; margin-bottom: 0.2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }}
+    
+    .page-title {{ 
+        text-align: left; text-transform: uppercase; 
+        background: linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%); 
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+        font-weight: 900; font-size: 2.2rem; margin-bottom: 0.2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); 
+    }}
     .page-subtitle {{ text-align: left; color: #D4AF37; font-weight: bold; font-size: 1.2rem; margin-bottom: 2rem; }}
     .section-title {{ text-align: left; text-transform: uppercase; color: #0F5132; font-weight: 800; font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid #D4AF37; padding-bottom: 5px; }}
+    
     .slot-card {{ border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; overflow: hidden; }}
     .slot-header {{ background: linear-gradient(135deg, #0F5132 0%, #198754 100%); color: white; text-align: center; padding: 6px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }}
     .slot-body {{ background-color: #f9fbf9; text-align: center; padding: 8px; border: 1px solid #198754; border-top: none; border-radius: 0 0 6px 6px; font-size: 1rem; color: #333; }}
     .slot-highlight {{ color: #0F5132; font-size: 1.6rem; font-weight: 900; margin: 0 6px; }}
+    
     .person-box {{ border-left: 4px solid #D4AF37; padding-left: 15px; margin-bottom: 20px; background-color: #faf8f5; padding: 15px; border-radius: 0 8px 8px 0; }}
     .info-card {{ text-align: center; padding: 15px 5px; background-color: #f0f7f4; border-radius: 8px; height: 100%; border-bottom: 3px solid #198754; }}
     .info-icon {{ font-size: 2rem; margin-bottom: 10px; }}
@@ -55,69 +57,76 @@ st.markdown(f"""
     .prep-title {{ font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; }}
     .prep-desc {{ font-size: 0.8rem; color: #666; line-height: 1.4; }}
 
-    /* ---------------------------------------------------- */
-    /* NÚT TIẾP TỤC, QUAY LẠI, VÀ XÁC NHẬN (Cùng 1 màu Gradient) */
-    /* ---------------------------------------------------- */
-    button[kind="primary"] {{
+    /* ------------------------------------------------------------------ */
+    /* FIX NÚT SUBMIT FORM + NÚT TIẾP TỤC/QUAY LẠI                        */
+    /* ------------------------------------------------------------------ */
+    button[kind="primary"], div[data-testid="stFormSubmitButton"] button {{
         background: linear-gradient(135deg, #D4AF37 0%, #198754 100%) !important;
-        color: white !important; text-transform: uppercase;
+        color: white !important; text-transform: uppercase !important;
         font-weight: bold !important; border: none !important; border-radius: 8px !important;
         padding: 12px !important;
     }}
-    button[kind="primary"]:hover {{
+    button[kind="primary"]:hover, div[data-testid="stFormSubmitButton"] button:hover {{
         background: linear-gradient(135deg, #198754 0%, #D4AF37 100%) !important;
         color: white !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
     }}
 
-    /* ---------------------------------------------------- */
-    /* THANH CHEVRON ĐỊNH HƯỚNG (Bắt theo cấu trúc 3 cột) */
-    /* ---------------------------------------------------- */
+    /* ------------------------------------------------------------------ */
+    /* THANH CHEVRON ĐỊNH HƯỚNG (GIAO DIỆN LAPTOP)                        */
+    /* ------------------------------------------------------------------ */
     
-    /* Reset sạch khung của 3 nút top */
-    div[data-testid="column"]:nth-child(1):nth-last-child(3) div[data-testid="stButton"] button,
-    div[data-testid="column"]:nth-child(2):nth-last-child(2) div[data-testid="stButton"] button,
-    div[data-testid="column"]:nth-child(3):nth-last-child(1) div[data-testid="stButton"] button {{
-        height: 60px !important; border: none !important; border-radius: 0 !important; 
-        box-shadow: none !important; padding: 0 !important; margin: 0 !important;
+    div[data-testid="stHorizontalBlock"]:has(.st-key-step1) {{
+        position: sticky; top: 2.875rem; z-index: 9999; background: white; padding: 15px 0 10px 0; gap: 0px !important; margin-bottom: 20px;
+    }}
+    div[data-testid="stHorizontalBlock"]:has(.st-key-step1) > div[data-testid="column"] {{
+        padding: 0px !important; gap: 0px !important; overflow: visible !important;
+    }}
+
+    /* Cơ bản 3 nút Chevron */
+    .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {{
+        height: 60px !important; width: 100% !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important;
     }}
     
-    /* Ép văn bản rớt đúng 2 dòng, chữ đậm */
-    div[data-testid="column"]:nth-child(1):nth-last-child(3) div[data-testid="stButton"] button *,
-    div[data-testid="column"]:nth-child(2):nth-last-child(2) div[data-testid="stButton"] button *,
-    div[data-testid="column"]:nth-child(3):nth-last-child(1) div[data-testid="stButton"] button * {{
-        white-space: pre-wrap !important; line-height: 1.2 !important; font-size: 0.85rem !important;
-        font-weight: 800 !important; margin: 0 !important; text-align: center !important;
+    /* Chữ bên trong */
+    .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p {{
+        white-space: pre-wrap !important; line-height: 1.2 !important; font-size: 0.85rem !important; font-weight: 800 !important; margin: 0 !important; text-align: center !important;
     }}
 
-    /* SHAPE Bước 1 */
-    div[data-testid="column"]:nth-child(1):nth-last-child(3) div[data-testid="stButton"] button {{
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%) !important;
-        background: {c1_bg} !important;
-        padding-right: 15px !important;
-    }}
-    div[data-testid="column"]:nth-child(1):nth-last-child(3) div[data-testid="stButton"] button * {{ color: {c1_tx} !important; }}
+    /* BƯỚC 1 */
+    .st-key-step1 button {{ background: {active_bg if step == 1 else inactive_bg} !important; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%) !important; padding-right: 15px !important; }}
+    .st-key-step1 button p {{ color: {active_text if step == 1 else inactive_text} !important; }}
 
-    /* SHAPE Bước 2 (Kéo lùi về sau để đè lên bước 1) */
-    div[data-testid="column"]:nth-child(2):nth-last-child(2) div[data-testid="stButton"] button {{
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%) !important;
-        background: {c2_bg} !important;
-        width: calc(100% + 24px) !important; margin-left: -24px !important; padding-left: 15px !important; padding-right: 15px !important;
-    }}
-    div[data-testid="column"]:nth-child(2):nth-last-child(2) div[data-testid="stButton"] button * {{ color: {c2_tx} !important; }}
+    /* BƯỚC 2 */
+    .st-key-step2 button {{ background: {active_bg if step == 2 else inactive_bg} !important; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%) !important; width: calc(100% + 24px) !important; margin-left: -24px !important; padding-left: 15px !important; padding-right: 15px !important; }}
+    .st-key-step2 button p {{ color: {active_text if step == 2 else inactive_text} !important; }}
 
-    /* SHAPE Bước 3 (Kéo lùi về sau để đè lên bước 2) */
-    div[data-testid="column"]:nth-child(3):nth-last-child(1) div[data-testid="stButton"] button {{
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15px 50%) !important;
-        background: {c3_bg} !important;
-        width: calc(100% + 24px) !important; margin-left: -24px !important; padding-left: 20px !important;
-    }}
-    div[data-testid="column"]:nth-child(3):nth-last-child(1) div[data-testid="stButton"] button * {{ color: {c3_tx} !important; }}
+    /* BƯỚC 3 */
+    .st-key-step3 button {{ background: {active_bg if step == 3 else inactive_bg} !important; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15px 50%) !important; width: calc(100% + 24px) !important; margin-left: -24px !important; padding-left: 20px !important; }}
+    .st-key-step3 button p {{ color: {active_text if step == 3 else inactive_text} !important; }}
 
-    /* Tắt viền đỏ khi hover cho thanh Chevron */
-    div[data-testid="column"]:nth-child(1):nth-last-child(3) div[data-testid="stButton"] button:hover,
-    div[data-testid="column"]:nth-child(2):nth-last-child(2) div[data-testid="stButton"] button:hover,
-    div[data-testid="column"]:nth-child(3):nth-last-child(1) div[data-testid="stButton"] button:hover {{
-        border-color: transparent !important; opacity: 0.8 !important;
+    /* Hover */
+    .st-key-step1 button:hover, .st-key-step2 button:hover, .st-key-step3 button:hover {{ border-color: transparent !important; opacity: 0.8 !important; }}
+
+    /* ------------------------------------------------------------------ */
+    /* TỐI ƯU HÓA CHO ĐIỆN THOẠI (DƯỚI 640PX)                             */
+    /* ------------------------------------------------------------------ */
+    @media only screen and (max-width: 640px) {{
+        /* 1. Sửa Title mất chữ */
+        .page-title {{ font-size: 1.8rem !important; white-space: normal !important; text-align: center !important; }}
+        .page-subtitle {{ text-align: center !important; }}
+        
+        /* 2. Ép thanh Chevron nằm ngang thay vì dọc */
+        div[data-testid="stHorizontalBlock"]:has(.st-key-step1) {{
+            flex-direction: row !important;
+        }}
+        
+        /* 3. Thu nhỏ chữ + ép margin để vừa 3 cục ngang */
+        .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p {{ font-size: 0.65rem !important; }}
+        
+        /* Thu nhỏ mũi nhọn để đỡ chiếm chỗ trên đt */
+        .st-key-step1 button {{ clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%) !important; padding-right: 10px !important; }}
+        .st-key-step2 button {{ clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%) !important; width: calc(100% + 15px) !important; margin-left: -15px !important; padding-left: 10px !important; padding-right: 10px !important; }}
+        .st-key-step3 button {{ clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%) !important; width: calc(100% + 15px) !important; margin-left: -15px !important; padding-left: 15px !important; }}
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -174,9 +183,9 @@ for i, block in enumerate(blocks_info):
 
 # --- 5. CHEVRON NAVIGATION BAR ---
 nav_c1, nav_c2, nav_c3 = st.columns(3)
-nav_c1.button("BƯỚC 1\nTHÔNG TIN TRIP", on_click=change_step, args=(1,), use_container_width=True)
-nav_c2.button("BƯỚC 2\nLỊCH TRÌNH & VẬT DỤNG", on_click=change_step, args=(2,), use_container_width=True)
-nav_c3.button("BƯỚC 3\nĐĂNG KÝ", on_click=change_step, args=(3,), use_container_width=True)
+nav_c1.button("BƯỚC 1\nTHÔNG TIN", key="step1", on_click=change_step, args=(1,), use_container_width=True)
+nav_c2.button("BƯỚC 2\nLỊCH TRÌNH", key="step2", on_click=change_step, args=(2,), use_container_width=True)
+nav_c3.button("BƯỚC 3\nĐĂNG KÝ", key="step3", on_click=change_step, args=(3,), use_container_width=True)
 
 
 # --- 6. NỘI DUNG TỪNG BƯỚC ---
@@ -204,7 +213,6 @@ if step == 1:
     c4.markdown("<div class='info-card'><div class='info-icon'>💰</div><div class='info-title'>Chi phí</div><div class='info-desc'>880.000đ / người<br>Bao gồm xe, ăn uống, bảo hiểm...</div></div>", unsafe_allow_html=True)
     
     st.divider()
-    # TYPE PRIMARY THẦN THÁNH
     st.button("TIẾP TỤC: LỊCH TRÌNH & VẬT DỤNG", type="primary", on_click=change_step, args=(2,), use_container_width=True)
 
 elif step == 2:
@@ -236,7 +244,6 @@ elif step == 2:
     
     st.divider()
     b1, b2 = st.columns(2)
-    # TYPE PRIMARY THẦN THÁNH
     b1.button("QUAY LẠI: THÔNG TIN TRIP", type="primary", on_click=change_step, args=(1,), use_container_width=True)
     b2.button("TIẾP TỤC: ĐĂNG KÝ", type="primary", on_click=change_step, args=(3,), use_container_width=True)
 
@@ -277,8 +284,7 @@ elif step == 3:
         st.warning("Trong quá trình trải nghiệm, luôn có 3-4 người trong Ban tổ chức đi đầu, giữa và chốt đoàn để đảm bảo an toàn, hướng dẫn quan sát trải nghiệm cho đoàn tránh bị côn trùng, nhện, rắn... cắn (rủi ro bị cắn rất thấp). Người tham gia đã được thông báo về những rủi ro này, đồng ý tham gia trip và miễn trừ trách nhiệm, miễn bồi thường thiệt hại đối với các cá nhân, đơn vị tổ chức chương trình này nếu có tai nạn, rủi ro xảy ra đối với bản thân, tài sản của người tham gia và của người thân đi cùng.")
         is_agreed = st.checkbox("Tôi đã đọc, hiểu rõ và đồng ý với các nội dung miễn trừ trách nhiệm nêu trên.")
         
-        # TYPE PRIMARY THẦN THÁNH
-        submitted = st.form_submit_button("XÁC NHẬN ĐĂNG KÝ", type="primary")
+        submitted = st.form_submit_button("XÁC NHẬN ĐĂNG KÝ", type="primary", use_container_width=True)
 
     # --- XỬ LÝ SUBMIT ---
     if submitted:
