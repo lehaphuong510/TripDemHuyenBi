@@ -5,19 +5,8 @@ import pandas as pd
 import time
 from datetime import datetime
 import pytz
-import base64
-import os
 
-# --- HÀM ĐỌC ẢNH PNG THÀNH ICON HTML ---
-def get_img_html(file_name, width=45):
-    if os.path.exists(file_name):
-        with open(file_name, "rb") as f:
-            data = base64.b64encode(f.read()).decode("utf-8")
-        return f'<img src="data:image/png;base64,{data}" width="{width}px" style="margin-bottom: 5px;">'
-    else:
-        return "<div style='font-size: 2rem; margin-bottom: 10px;'>🖼️</div>" # Icon tạm thời
-
-# --- 1. CẤU HÌNH TRANG & CSS ---
+# --- 1. CẤU HÌNH TRANG & CSS CƠ BẢN ---
 st.set_page_config(page_title="Đăng Ký Trip Đêm Huyền Bí", page_icon="🌿", layout="centered")
 
 # Khởi tạo Session State cho các bước
@@ -29,7 +18,7 @@ def change_step(new_step):
 
 step = st.session_state.step
 
-# Setup màu cho Chevron Bar
+# Setup màu gradient và màu xám cho Chevron Bar
 active_bg = "linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%)"
 inactive_bg = "#E0E0E0"
 active_text = "#FFFFFF"
@@ -68,7 +57,7 @@ st.markdown(f"""
     
     .person-box {{ border-left: 4px solid #D4AF37; padding-left: 15px; margin-bottom: 20px; background-color: #faf8f5; padding: 15px; border-radius: 0 8px 8px 0; }}
     .info-card {{ text-align: center; padding: 15px 5px; background-color: #f0f7f4; border-radius: 8px; height: 100%; border-bottom: 3px solid #198754; }}
-    .info-icon {{ margin-bottom: 10px; }}
+    .info-icon {{ font-size: 2rem; margin-bottom: 10px; }}
     .info-title {{ font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase; }}
     .info-desc {{ font-size: 0.85rem; color: #444; }}
     .timeline-item {{ margin-bottom: 10px; padding-left: 15px; border-left: 2px dashed #D4AF37; }}
@@ -78,89 +67,85 @@ st.markdown(f"""
         border-radius: 12px; margin-bottom: 15px; height: 90%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s;
     }}
     .prep-card:hover {{ transform: translateY(-3px); border-color: #D4AF37; }}
-    .prep-icon {{ margin-bottom: 10px; }}
+    .prep-icon {{ font-size: 2.5rem; margin-bottom: 10px; }}
     .prep-title {{ font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; }}
     .prep-desc {{ font-size: 0.8rem; color: #666; line-height: 1.4; }}
     
-    /* ------------------------------------- */
-    /* GLOBAL BUTTON FIX (Khử màu đỏ hover)  */
-    /* ------------------------------------- */
-    .stButton>button {{
-        background: linear-gradient(135deg, #D4AF37 0%, #198754 100%); color: white; text-transform: uppercase;
-        font-weight: bold; border: none; width: 100%; border-radius: 8px; padding: 12px; margin-top: 10px;
-    }}
-    .stButton>button:hover, .stButton>button:active, .stButton>button:focus {{ 
-        background: linear-gradient(135deg, #198754 0%, #D4AF37 100%); 
+    /* ======================================================== */
+    /* CÁC NÚT TIẾP TỤC / QUAY LẠI / SUBMIT (KHỬ MÀU ĐỎ STREAMLIT) */
+    /* ======================================================== */
+    .stButton:not(.st-key-step1):not(.st-key-step2):not(.st-key-step3) > button {{
+        background: linear-gradient(135deg, #D4AF37 0%, #198754 100%) !important; 
         color: white !important; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+        text-transform: uppercase;
+        font-weight: bold; border: none !important; width: 100%; border-radius: 8px; padding: 12px; margin-top: 10px;
+    }}
+    .stButton:not(.st-key-step1):not(.st-key-step2):not(.st-key-step3) > button:hover,
+    .stButton:not(.st-key-step1):not(.st-key-step2):not(.st-key-step3) > button:focus,
+    .stButton:not(.st-key-step1):not(.st-key-step2):not(.st-key-step3) > button:active {{ 
+        background: linear-gradient(135deg, #198754 0%, #D4AF37 100%) !important; 
+        color: white !important; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; 
         border-color: transparent !important;
     }}
     
-    /* ------------------------------------- */
-    /* CHEVRON PROGRESS BAR CSS TÙY CHỈNH    */
-    /* ------------------------------------- */
-    /* Tạo hiệu ứng Sticky ghim trên đầu */
-    div[data-testid="stHorizontalBlock"]:has(.st-key-btn_step1) {{
-        gap: 0 !important;
-        padding: 10px 0;
-        position: sticky;
-        top: 2.875rem;
-        z-index: 999;
-        background-color: white;
+    /* ========================================= */
+    /* CHEVRON PROGRESS BAR STICKY HEADER CSS    */
+    /* ========================================= */
+    
+    /* Ghim cố định cụm nút trên top khi cuộn và xóa khoảng trắng giữa 3 cột */
+    div[data-testid="stHorizontalBlock"]:has(.st-key-step1) {{
+        position: sticky; top: 2.875rem; z-index: 9999;
+        background: white; padding: 15px 0 5px 0; gap: 0 !important; margin-bottom: 10px;
     }}
-    div[data-testid="stHorizontalBlock"]:has(.st-key-btn_step1) > div {{
-        padding: 0 !important; /* Xóa khoảng trống giữa các cột */
-    }}
-
-    /* CSS Định dạng chung cho 3 mũi tên */
-    .st-key-btn_step1 button, .st-key-btn_step2 button, .st-key-btn_step3 button {{
-        height: 55px !important;
-        width: 100% !important;
-        border: none !important;
-        border-radius: 0 !important;
-        font-size: 0.75rem !important;
-        font-weight: 900 !important;
-        line-height: 1.3 !important;
-        white-space: pre-wrap !important; /* Cho phép xuống hàng */
+    div[data-testid="stHorizontalBlock"]:has(.st-key-step1) > div[data-testid="column"] {{
         padding: 0 !important;
-        box-shadow: none !important;
-        transition: opacity 0.2s !important;
-    }}
-
-    /* Shape Mũi tên 1 */
-    .st-key-btn_step1 button {{
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%);
-        padding-right: 15px !important;
-        background: {active_bg if step == 1 else inactive_bg} !important;
-        color: {active_text if step == 1 else inactive_text} !important;
     }}
     
-    /* Shape Mũi tên 2 (Kéo thụt lùi để khớp vào đuôi mũi tên 1) */
-    .st-key-btn_step2 button {{
+    /* Reset style chung cho 3 nút Chevron để nó khít vào nhau */
+    .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {{
+        height: 55px !important; width: 100% !important; border: none !important; border-radius: 0 !important;
+        font-weight: 800 !important; font-size: 0.8rem !important; padding: 0 !important; margin: 0 !important;
+        transition: opacity 0.3s; box-shadow: none !important;
+        white-space: pre-wrap !important; /* Cho phép xuống 2 dòng */
+        line-height: 1.3 !important;
+    }}
+    
+    /* Ghi đè hover để thanh Chevron KHÔNG bị ám viền/chữ đỏ */
+    .st-key-step1 button:hover, .st-key-step2 button:hover, .st-key-step3 button:hover,
+    .st-key-step1 button:focus, .st-key-step2 button:focus, .st-key-step3 button:focus,
+    .st-key-step1 button:active, .st-key-step2 button:active, .st-key-step3 button:active {{
+        border-color: transparent !important;
+        opacity: 0.8 !important;
+    }}
+
+    /* SHAPE Mũi tên Bước 1 */
+    .st-key-step1 button {{
+        background: {active_bg if step == 1 else inactive_bg} !important;
+        color: {active_text if step == 1 else inactive_text} !important;
+        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%);
+        padding-right: 15px !important;
+    }}
+    
+    /* SHAPE Mũi tên Bước 2 */
+    .st-key-step2 button {{
+        background: {active_bg if step == 2 else inactive_bg} !important;
+        color: {active_text if step == 2 else inactive_text} !important;
         clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%);
         margin-left: -5px !important;
         width: calc(100% + 5px) !important;
-        padding-left: 15px !important;
-        padding-right: 15px !important;
-        background: {active_bg if step == 2 else inactive_bg} !important;
-        color: {active_text if step == 2 else inactive_text} !important;
+        padding-left: 15px !important; padding-right: 15px !important;
     }}
     
-    /* Shape Mũi tên 3 */
-    .st-key-btn_step3 button {{
+    /* SHAPE Mũi tên Bước 3 */
+    .st-key-step3 button {{
+        background: {active_bg if step == 3 else inactive_bg} !important;
+        color: {active_text if step == 3 else inactive_text} !important;
         clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15px 50%);
         margin-left: -10px !important;
         width: calc(100% + 10px) !important;
         padding-left: 15px !important;
-        background: {active_bg if step == 3 else inactive_bg} !important;
-        color: {active_text if step == 3 else inactive_text} !important;
     }}
-    
-    /* Hiệu ứng Hover riêng cho thanh Chevron */
-    .st-key-btn_step1 button:hover {{ opacity: 0.8; color: {active_text if step == 1 else inactive_text} !important; }}
-    .st-key-btn_step2 button:hover {{ opacity: 0.8; color: {active_text if step == 2 else inactive_text} !important; }}
-    .st-key-btn_step3 button:hover {{ opacity: 0.8; color: {active_text if step == 3 else inactive_text} !important; }}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -212,15 +197,15 @@ for i, block in enumerate(blocks_info):
     with cols[i]:
         st.markdown(f"<div class='slot-card'><div class='slot-header'>{block['dot']} ({block['ngay']})</div><div class='slot-body'>Còn <span class='slot-highlight'>{block['remaining']}</span> suất</div></div>", unsafe_allow_html=True)
 
-st.divider()
 
-# --- THANH ĐIỀU HƯỚNG MŨI TÊN (CHEVRON BAR) ---
+# --- CHEVRON NAVIGATION BAR ---
 nav_c1, nav_c2, nav_c3 = st.columns(3)
-nav_c1.button("Bước 1\nTHÔNG TIN TRIP", key="btn_step1", on_click=change_step, args=(1,))
-nav_c2.button("Bước 2\nLỊCH TRÌNH & VẬT DỤNG", key="btn_step2", on_click=change_step, args=(2,))
-nav_c3.button("Bước 3\nĐĂNG KÝ", key="btn_step3", on_click=change_step, args=(3,))
+nav_c1.button("BƯỚC 1\nTHÔNG TIN TRIP", key="step1", on_click=change_step, args=(1,))
+nav_c2.button("BƯỚC 2\nLỊCH TRÌNH & VẬT DỤNG", key="step2", on_click=change_step, args=(2,))
+nav_c3.button("BƯỚC 3\nĐĂNG KÝ", key="step3", on_click=change_step, args=(3,))
 
-# --- HIỂN THỊ NỘI DUNG THEO TỪNG BƯỚC ---
+
+# --- NỘI DUNG TỪNG BƯỚC ---
 if step == 1:
     st.markdown("<div class='section-title nowrap-text'>LỜI GIỚI THIỆU</div>", unsafe_allow_html=True)
     st.markdown("""
@@ -239,12 +224,10 @@ if step == 1:
 
     st.markdown("<div class='section-title nowrap-text'>THÔNG TIN TRIP</div>", unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
-    
-    # --- THAY TÊN FILE PNG Ở ĐÂY ---
-    c1.markdown(f"<div class='info-card'><div class='info-icon'>{get_img_html('icon_dotuoi.png')}</div><div class='info-title'>Độ tuổi</div><div class='info-desc'>Từ 5 tuổi trở lên.<br>Trẻ ≥8 tuổi tự đi được.<br>Trẻ 5-7 tuổi cần phụ huynh.</div></div>", unsafe_allow_html=True)
-    c2.markdown(f"<div class='info-card'><div class='info-icon'>{get_img_html('icon_thoigian.png')}</div><div class='info-title'>Thời gian</div><div class='info-desc'>13:00 - 22:00<br>Đi về trong ngày.<br>Khởi hành tại Q1.</div></div>", unsafe_allow_html=True)
-    c3.markdown(f"<div class='info-card'><div class='info-icon'>{get_img_html('icon_diadiem.png')}</div><div class='info-title'>Địa điểm</div><div class='info-desc'>Rừng Mã Đà<br>Khu bảo tồn Thiên nhiên<br>Đồng Nai.</div></div>", unsafe_allow_html=True)
-    c4.markdown(f"<div class='info-card'><div class='info-icon'>{get_img_html('icon_chiphi.png')}</div><div class='info-title'>Chi phí</div><div class='info-desc'>880.000đ / người<br>Bao gồm xe, ăn uống, bảo hiểm...</div></div>", unsafe_allow_html=True)
+    c1.markdown("<div class='info-card'><div class='info-icon'>👶</div><div class='info-title'>Độ tuổi</div><div class='info-desc'>Từ 5 tuổi trở lên.<br>Trẻ ≥8 tuổi tự đi được.<br>Trẻ 5-7 tuổi cần phụ huynh.</div></div>", unsafe_allow_html=True)
+    c2.markdown("<div class='info-card'><div class='info-icon'>⏰</div><div class='info-title'>Thời gian</div><div class='info-desc'>13:00 - 22:00<br>Đi về trong ngày.<br>Khởi hành tại Q1.</div></div>", unsafe_allow_html=True)
+    c3.markdown("<div class='info-card'><div class='info-icon'>📍</div><div class='info-title'>Địa điểm</div><div class='info-desc'>Rừng Mã Đà<br>Khu bảo tồn Thiên nhiên<br>Đồng Nai.</div></div>", unsafe_allow_html=True)
+    c4.markdown("<div class='info-card'><div class='info-icon'>💰</div><div class='info-title'>Chi phí</div><div class='info-desc'>880.000đ / người<br>Bao gồm xe, ăn uống, bảo hiểm...</div></div>", unsafe_allow_html=True)
     
     st.divider()
     st.button("TIẾP TỤC: LỊCH TRÌNH & VẬT DỤNG", on_click=change_step, args=(2,), use_container_width=True)
@@ -263,33 +246,25 @@ elif step == 2:
     """, unsafe_allow_html=True)
 
     st.markdown("<div class='section-title nowrap-text'>2. CHUẨN BỊ VẬT DỤNG</div>", unsafe_allow_html=True)
+    def render_prep(icon, title, desc): return f"<div class='prep-card'><div class='prep-icon'>{icon}</div><div class='prep-title'>{title}</div><div class='prep-desc'>{desc}</div></div>"
     
-    def render_prep(img_file, title, desc): 
-        return f"<div class='prep-card'><div class='prep-icon'>{get_img_html(img_file, width=45)}</div><div class='prep-title'>{title}</div><div class='prep-desc'>{desc}</div></div>"
-    
-    # --- THAY TÊN FILE PNG Ở ĐÂY ---
     r1c1, r1c2, r1c3 = st.columns(3)
-    r1c1.markdown(render_prep("icon_aoquan.png", "Áo quần dài", "Dùng che chắn tay chân tránh cây gai, côn trùng đốt"), unsafe_allow_html=True)
-    r1c2.markdown(render_prep("icon_giay.png", "Giày ba-ta + vớ cao", "Tự tin sải bước"), unsafe_allow_html=True)
-    r1c3.markdown(render_prep("icon_sotay.png", "Sổ tay và bút", "Ghi chép thông tin liên quan đến chuyến đi và sinh vật"), unsafe_allow_html=True)
-    
+    r1c1.markdown(render_prep("🥼👖", "Áo quần dài", "Dùng che chắn tay chân tránh cây gai, côn trùng đốt"), unsafe_allow_html=True)
+    r1c2.markdown(render_prep("🥾🧦", "Giày ba-ta + vớ cao", "Tự tin sải bước"), unsafe_allow_html=True)
+    r1c3.markdown(render_prep("📔🖊️", "Sổ tay và bút", "Ghi chép thông tin liên quan đến chuyến đi và sinh vật"), unsafe_allow_html=True)
     r2c1, r2c2, r2c3 = st.columns(3)
-    r2c1.markdown(render_prep("icon_balo.png", "Balo gọn nhẹ", "Chứa các vật dụng cần thiết (bình nước, áo mưa, sổ bút)"), unsafe_allow_html=True)
-    r2c2.markdown(render_prep("icon_binhnuoc.png", "Bình nước", "Tối thiểu 500ml (BTC có dự phòng nếu quên)"), unsafe_allow_html=True)
-    r2c3.markdown(render_prep("icon_aomua.png", "Áo mưa", "Dự phòng mưa bất chợt (BTC có dự phòng nếu quên)"), unsafe_allow_html=True)
-    
+    r2c1.markdown(render_prep("🎒", "Balo gọn nhẹ", "Chứa các vật dụng cần thiết (bình nước, áo mưa, sổ bút)"), unsafe_allow_html=True)
+    r2c2.markdown(render_prep("🥤", "Bình nước", "Tối thiểu 500ml (BTC có dự phòng nếu quên)"), unsafe_allow_html=True)
+    r2c3.markdown(render_prep("🧥", "Áo mưa", "Dự phòng mưa bất chợt (BTC có dự phòng nếu quên)"), unsafe_allow_html=True)
     _, r3c2, _ = st.columns(3)
-    r3c2.markdown(render_prep("icon_denpin.png", "Đèn pin đeo đầu", "Soi đường và quan sát (BTC trang bị lúc ăn tối)"), unsafe_allow_html=True)
+    r3c2.markdown(render_prep("🔦", "Đèn pin đeo đầu", "Soi đường và quan sát (BTC trang bị lúc ăn tối)"), unsafe_allow_html=True)
     
     st.divider()
     b1, b2 = st.columns(2)
     b1.button("QUAY LẠI: THÔNG TIN TRIP", on_click=change_step, args=(1,), use_container_width=True)
-    b2.button("TIẾP TỤC: ĐĂNG KÝ & THANH TOÁN", on_click=change_step, args=(3,), use_container_width=True)
+    b2.button("TIẾP TỤC: ĐĂNG KÝ", on_click=change_step, args=(3,), use_container_width=True)
 
 elif step == 3:
-    b_back, _ = st.columns([1, 2])
-    b_back.button("QUAY LẠI: LỊCH TRÌNH & VẬT DỤNG", on_click=change_step, args=(2,))
-    
     st.markdown("<div class='section-title nowrap-text'>THÔNG TIN ĐĂNG KÝ</div>", unsafe_allow_html=True)
     if not trip_options:
         st.error("Rất tiếc! Hiện tại tất cả các đợt đều đã hết suất đăng ký.")
