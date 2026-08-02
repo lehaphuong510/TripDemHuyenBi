@@ -20,7 +20,8 @@ step = st.session_state.step
 
 # Setup màu gradient và màu xám cho Chevron Bar
 active_bg = "linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%)"
-inactive_bg = "#D3D3D3"
+inactive_bg = "#E0E0E0"
+active_text = "#FFFFFF"
 inactive_text = "#666666"
 
 st.markdown(f"""
@@ -70,67 +71,79 @@ st.markdown(f"""
     .prep-title {{ font-weight: bold; color: #0F5132; margin-bottom: 5px; font-size: 0.9rem; }}
     .prep-desc {{ font-size: 0.8rem; color: #666; line-height: 1.4; }}
     
-    /* Nút Submit cuối form */
-    .stButton>button {{
-        background: linear-gradient(135deg, #D4AF37 0%, #198754 100%); color: white; text-transform: uppercase;
-        font-weight: bold; border: none; width: 100%; border-radius: 8px; padding: 12px; margin-top: 10px;
+    /* ======================================================== */
+    /* 1. NÚT ĐIỀU HƯỚNG CHÍNH (Tiếp tục, Quay lại, Submit)     */
+    /* Dùng thuộc tính kind="primary" để target chính xác       */
+    /* ======================================================== */
+    button[kind="primary"] {{
+        background: linear-gradient(135deg, #D4AF37 0%, #198754 100%) !important; 
+        color: white !important; text-transform: uppercase;
+        font-weight: bold; border: none !important; border-radius: 8px !important; 
+        padding: 12px !important; margin-top: 10px !important;
     }}
-    
-    /* ========================================= */
-    /* CHEVRON PROGRESS BAR STICKY HEADER CSS    */
-    /* ========================================= */
-    
-    /* Ghim cố định cụm nút trên top khi cuộn */
-    div[data-testid="stHorizontalBlock"]:has(.st-key-btn_step1) {{
-        position: sticky;
-        top: 2.875rem; 
-        z-index: 9999;
-        background: white;
-        padding: 15px 0;
-        gap: 0 !important;
-        margin-bottom: 10px;
-    }}
-    
-    /* Reset style chung cho 3 nút Chevron */
-    .st-key-btn_step1 button, .st-key-btn_step2 button, .st-key-btn_step3 button {{
-        height: 45px !important;
+    button[kind="primary"]:hover, button[kind="primary"]:focus {{ 
+        background: linear-gradient(135deg, #198754 0%, #D4AF37 100%) !important; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; color: white !important;
         border: none !important;
-        border-radius: 0 !important;
-        font-weight: 800 !important;
+    }}
+
+    /* ======================================================== */
+    /* 2. THANH CHEVRON PROGRESS BAR CỐ ĐỊNH                    */
+    /* ======================================================== */
+    
+    /* Ghim cố định và ép sát khoảng cách 3 cột */
+    div[data-testid="stHorizontalBlock"]:has(.st-key-step1) {{
+        position: sticky; top: 2.875rem; z-index: 9999;
+        background: white; padding: 15px 0 10px 0; gap: 0px !important; margin-bottom: 20px;
+    }}
+    div[data-testid="stHorizontalBlock"]:has(.st-key-step1) > div[data-testid="column"] {{
+        padding: 0px !important; gap: 0px !important;
+    }}
+    
+    /* Reset Button Chevron */
+    .st-key-step1 button, .st-key-step2 button, .st-key-step3 button {{
+        height: 60px !important; width: 100% !important; border: none !important; 
+        border-radius: 0 !important; margin: 0 !important; box-shadow: none !important;
         padding: 0 !important;
-        margin: 0 !important;
-        transition: opacity 0.3s;
-        box-shadow: none !important;
-    }}
-    .st-key-btn_step1 button:hover, .st-key-btn_step2 button:hover, .st-key-btn_step3 button:hover {{
-        opacity: 0.8;
     }}
     
-    /* Mũi tên Bước 1 */
-    .st-key-btn_step1 button {{
+    /* Cho phép chữ rớt 2 dòng */
+    .st-key-step1 button p, .st-key-step2 button p, .st-key-step3 button p {{
+        white-space: pre-line !important; 
+        line-height: 1.2 !important; font-size: 0.85rem !important; 
+        font-weight: 800 !important; margin: 0 !important; text-align: center !important;
+    }}
+
+    /* MŨI TÊN BƯỚC 1 */
+    .st-key-step1 button {{
         background: {active_bg if step == 1 else inactive_bg} !important;
-        color: {'white' if step == 1 else inactive_text} !important;
-        clip-path: polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%);
-        width: 100% !important;
+        clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%) !important;
     }}
+    .st-key-step1 button p {{ color: {active_text if step == 1 else inactive_text} !important; }}
     
-    /* Mũi tên Bước 2 */
-    .st-key-btn_step2 button {{
+    /* MŨI TÊN BƯỚC 2 */
+    .st-key-step2 button {{
         background: {active_bg if step == 2 else inactive_bg} !important;
-        color: {'white' if step == 2 else inactive_text} !important;
-        clip-path: polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%, 10% 50%);
-        width: 105% !important;
-        margin-left: -5% !important;
+        clip-path: polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%, 15% 50%) !important;
+        margin-left: -5% !important; width: 105% !important; 
+        padding-left: 10px !important;
     }}
+    .st-key-step2 button p {{ color: {active_text if step == 2 else inactive_text} !important; }}
     
-    /* Mũi tên Bước 3 */
-    .st-key-btn_step3 button {{
+    /* MŨI TÊN BƯỚC 3 */
+    .st-key-step3 button {{
         background: {active_bg if step == 3 else inactive_bg} !important;
-        color: {'white' if step == 3 else inactive_text} !important;
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 10% 50%);
-        width: 105% !important;
-        margin-left: -5% !important;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15% 50%) !important;
+        margin-left: -10% !important; width: 110% !important; 
+        padding-left: 15px !important;
     }}
+    .st-key-step3 button p {{ color: {active_text if step == 3 else inactive_text} !important; }}
+
+    /* Tắt viền đỏ hover */
+    .st-key-step1 button:hover, .st-key-step2 button:hover, .st-key-step3 button:hover {{
+        border-color: transparent !important; opacity: 0.8 !important;
+    }}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -185,14 +198,14 @@ for i, block in enumerate(blocks_info):
 
 # --- CHEVRON NAVIGATION BAR ---
 nav_c1, nav_c2, nav_c3 = st.columns(3)
-nav_c1.button("1. THÔNG TIN", key="btn_step1", on_click=change_step, args=(1,))
-nav_c2.button("2. LỊCH TRÌNH", key="btn_step2", on_click=change_step, args=(2,))
-nav_c3.button("3. ĐĂNG KÝ", key="btn_step3", on_click=change_step, args=(3,))
+nav_c1.button("BƯỚC 1\nTHÔNG TIN TRIP", key="step1", on_click=change_step, args=(1,), use_container_width=True)
+nav_c2.button("BƯỚC 2\nLỊCH TRÌNH & VẬT DỤNG", key="step2", on_click=change_step, args=(2,), use_container_width=True)
+nav_c3.button("BƯỚC 3\nĐĂNG KÝ", key="step3", on_click=change_step, args=(3,), use_container_width=True)
 
 
 # --- NỘI DUNG TỪNG BƯỚC ---
 if step == 1:
-    st.markdown("<div class='section-title nowrap-text'>1. LỜI GIỚI THIỆU</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title nowrap-text'>LỜI GIỚI THIỆU</div>", unsafe_allow_html=True)
     st.markdown("""
     🦎🐸“Đêm huyền bí”🐍🦜 là một trải nghiệm đầy mê hoặc, mở ra cánh cửa vào một thế giới bí ẩn khó có thể nhìn thấy vào ban ngày. Các loài sinh vật ban đêm sẽ hiện ra trước mắt bạn đầy ấn tượng và lôi cuốn. Cảm nhận không khí trong lành, những dấu vết của các loài thú lớn để lại trên đường đi, hay sự ngụy trang tài tình của các loài sinh vật nhỏ bé sẽ dần lộ diện để bạn khám phá những bí mật ẩn sâu bên trong khu rừng. Mỗi bước chân sẽ là một cuộc phiêu lưu, một cơ hội để bạn tìm hiểu và kết nối sâu sắc hơn với thế giới tự nhiên đầy lý thú này.<br><br>
     🐝🐃🦗Trong hành trình “Đêm huyền bí”🐌🕷️🐚, bạn sẽ được trang bị đèn pin và có sự hướng dẫn của các chuyên gia dày dặn kinh nghiệm cùng kiểm lâm địa phương để khám phá những điều thú vị về các loài sinh vật trong đêm tối một cách an toàn, trực quan.<br><br>
@@ -215,10 +228,11 @@ if step == 1:
     c4.markdown("<div class='info-card'><div class='info-icon'>💰</div><div class='info-title'>Chi phí</div><div class='info-desc'>880.000đ / người<br>Bao gồm xe, ăn uống, bảo hiểm...</div></div>", unsafe_allow_html=True)
     
     st.divider()
-    st.button("Tiếp tục: LỊCH TRÌNH & VẬT DỤNG ➡️", on_click=change_step, args=(2,), use_container_width=True)
+    # DÙNG TYPE="PRIMARY" ĐỂ BẮT MÀU XANH GOLD
+    st.button("TIẾP TỤC: LỊCH TRÌNH & VẬT DỤNG", type="primary", on_click=change_step, args=(2,), use_container_width=True)
 
 elif step == 2:
-    st.markdown("<div class='section-title nowrap-text'>LỊCH TRÌNH</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title nowrap-text'>1. LỊCH TRÌNH</div>", unsafe_allow_html=True)
     st.markdown("""
     <div class='timeline-item'><span class='timeline-time'>12h45</span> Tập trung tại Cung văn hóa lao động (55B Nguyễn Thị Minh Khai, Q1)</div>
     <div class='timeline-item'><span class='timeline-time'>13h00</span> Khởi hành đến Khu bảo tồn TN-VH Đồng Nai</div>
@@ -246,11 +260,11 @@ elif step == 2:
     
     st.divider()
     b1, b2 = st.columns(2)
-    b1.button("⬅️ Quay lại: THÔNG TIN", on_click=change_step, args=(1,), use_container_width=True)
-    b2.button("Tiếp tục: ĐĂNG KÝ & THANH TOÁN ➡️", on_click=change_step, args=(3,), use_container_width=True)
+    b1.button("QUAY LẠI: THÔNG TIN TRIP", type="primary", on_click=change_step, args=(1,), use_container_width=True)
+    b2.button("TIẾP TỤC: ĐĂNG KÝ", type="primary", on_click=change_step, args=(3,), use_container_width=True)
 
 elif step == 3:
-    st.markdown("<div class='section-title nowrap-text'>3. ĐIỀN THÔNG TIN</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title nowrap-text'>THÔNG TIN ĐĂNG KÝ</div>", unsafe_allow_html=True)
     if not trip_options:
         st.error("Rất tiếc! Hiện tại tất cả các đợt đều đã hết suất đăng ký.")
         st.stop()
@@ -286,7 +300,7 @@ elif step == 3:
         st.warning("Trong quá trình trải nghiệm, luôn có 3-4 người trong Ban tổ chức đi đầu, giữa và chốt đoàn để đảm bảo an toàn, hướng dẫn quan sát trải nghiệm cho đoàn tránh bị côn trùng, nhện, rắn... cắn (rủi ro bị cắn rất thấp). Người tham gia đã được thông báo về những rủi ro này, đồng ý tham gia trip và miễn trừ trách nhiệm, miễn bồi thường thiệt hại đối với các cá nhân, đơn vị tổ chức chương trình này nếu có tai nạn, rủi ro xảy ra đối với bản thân, tài sản của người tham gia và của người thân đi cùng.")
         is_agreed = st.checkbox("Tôi đã đọc, hiểu rõ và đồng ý với các nội dung miễn trừ trách nhiệm nêu trên.")
         
-        submitted = st.form_submit_button("XÁC NHẬN ĐĂNG KÝ")
+        submitted = st.form_submit_button("XÁC NHẬN ĐĂNG KÝ", type="primary")
 
     # --- XỬ LÝ SUBMIT ---
     if submitted:
