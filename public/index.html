@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Trip Đêm Huyền Bí</title>
+    <style>
+        /* CSS CHỐNG ĐẠN TỪ STREAMLIT CHUYỂN SANG */
+        :root {
+            --active-bg: linear-gradient(135deg, #0F5132 0%, #198754 40%, #D4AF37 100%);
+            --inactive-bg: #E0E0E0;
+            --primary: #198754;
+            --gold: #D4AF37;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fbf9; margin: 0; padding: 0; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; background: #fff; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        
+        /* MENU CHÍNH */
+        .main-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--gold); padding-bottom: 10px; }
+        .main-nav button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: var(--inactive-bg); text-transform: uppercase; }
+        .main-nav button.active { background: var(--active-bg); color: white; }
+
+        /* TIÊU ĐỀ */
+        .page-title { text-transform: uppercase; background: var(--active-bg); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; font-size: 2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-bottom: 5px; }
+        .page-subtitle { color: var(--gold); font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        /* CÁC BƯỚC (STEPS) */
+        .step-nav { display: flex; margin-bottom: 20px; }
+        .step-nav button { flex: 1; padding: 12px 5px; border: none; background: var(--inactive-bg); font-weight: bold; color: #666; cursor: pointer; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%); margin-left: -15px; }
+        .step-nav button:first-child { clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%); margin-left: 0; }
+        .step-nav button:last-child { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15px 50%); }
+        .step-nav button.active { background: var(--active-bg); color: white; }
+
+        /* SECTIONS & INPUTS */
+        .section-title { text-transform: uppercase; color: #0F5132; font-weight: 800; font-size: 1.3rem; margin: 20px 0 10px; border-bottom: 2px solid var(--gold); padding-bottom: 5px; }
+        .tab-content, .step-content { display: none; }
+        .tab-content.active, .step-content.active { display: block; }
+        
+        .waiver-box { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; margin-bottom: 20px; color: #856404; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #0F5132; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
+        
+        .person-box { border-left: 4px solid var(--gold); background: #faf8f5; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 15px; }
+        .btn-primary { background: linear-gradient(135deg, var(--gold) 0%, var(--primary) 100%); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 1.1rem; }
+        .btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        /* Mobile Fixes */
+        @media (max-width: 640px) {
+            .step-nav button { clip-path: none !important; margin: 0 0 5px 0 !important; width: 100%; border-radius: 6px; }
+            .step-nav { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- MENU CHÍNH GỘP 3 TÍNH NĂNG -->
+        <div class="main-nav">
+            <button class="active" onclick="switchTab('tab-register')">ĐĂNG KÝ</button>
+            <button onclick="switchTab('tab-lookup')">TRA CỨU</button>
+            <button onclick="switchTab('tab-admin')">ADMIN</button>
+        </div>
+
+        <!-- TAB ĐĂNG KÝ (Trip) -->
+        <div id="tab-register" class="tab-content active">
+            <div class="page-title">ĐĂNG KÝ TRIP ĐÊM HUYỀN BÍ</div>
+            <div class="page-subtitle">THỜI GIAN: 13:00 - 22:00</div>
+
+            <!-- Khung Chevron Navigation -->
+            <div class="step-nav">
+                <button id="nav-step1" class="active" onclick="switchStep(1)">BƯỚC 1<br>THÔNG TIN</button>
+                <button id="nav-step2" onclick="switchStep(2)">BƯỚC 2<br>LỊCH TRÌNH</button>
+                <button id="nav-step3" onclick="switchStep(3)">BƯỚC 3<br>ĐĂNG KÝ</button>
+            </div>
+
+            <!-- Bước 1: Thông tin (Tạm viết ngắn gọn để minh họa) -->
+            <div id="step1" class="step-content active">
+                <div class="section-title">LỜI GIỚI THIỆU</div>
+                <p>“Đêm huyền bí” là một trải nghiệm đầy mê hoặc...</p>
+                <button class="btn-primary" onclick="switchStep(2)">TIẾP TỤC: LỊCH TRÌNH</button>
+            </div>
+
+            <!-- Bước 2: Lịch trình -->
+            <div id="step2" class="step-content">
+                <div class="section-title">LỊCH TRÌNH & VẬT DỤNG</div>
+                <p>12h45: Tập trung... <br> Vật dụng: Giày, Đèn pin...</p>
+                <button class="btn-primary" onclick="switchStep(3)">TIẾP TỤC: ĐĂNG KÝ</button>
+            </div>
+
+            <!-- Bước 3: Đăng ký -->
+            <div id="step3" class="step-content">
+                <div class="section-title">THÔNG TIN ĐĂNG KÝ</div>
+                
+                <!-- LUẬT CHƠI MỚI: MIỄN TRỪ TRÁCH NHIỆM LÊN ĐẦU -->
+                <div class="waiver-box">
+                    <strong>MIỄN TRỪ TRÁCH NHIỆM:</strong>
+                    <p>Trong quá trình trải nghiệm, luôn có BTC đi kèm... rủi ro rất thấp. Người tham gia đồng ý tham gia trip và miễn trừ trách nhiệm...</p>
+                    <label>
+                        <input type="checkbox" id="agreeCheckbox" onchange="toggleForm()"> 
+                        <b>Tôi đã đọc, hiểu rõ và đồng ý với các nội dung trên.</b>
+                    </label>
+                </div>
+
+                <!-- FORM ĐĂNG KÝ (Bị ẩn cho đến khi tick đồng ý) -->
+                <div id="registrationForm" style="display: none;">
+                    <div class="form-group">
+                        <label>Đăng ký tham gia đợt:</label>
+                        <select id="tripSelect">
+                            <option value="">-- Sẽ load từ Google Sheet (Worker) --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số người đăng ký (1-20):</label>
+                        <input type="number" id="numPeople" min="1" max="20" value="1" onchange="renderParticipants()">
+                    </div>
+
+                    <div id="participantsList"></div> <!-- Render input tên, năm sinh bằng JS -->
+
+                    <div class="form-group">
+                        <label>SĐT liên hệ (Đại diện):</label>
+                        <input type="tel" id="phoneInput" placeholder="VD: 0902800318">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tải lên Bill thanh toán (Bắt buộc):</label>
+                        <!-- Thẻ input lấy file -->
+                        <input type="file" id="billUpload" accept="image/*">
+                        <small>Ảnh sẽ được tải lên ImgBB an toàn và bảo mật.</small>
+                    </div>
+
+                    <button class="btn-primary" onclick="submitRegistration()">XÁC NHẬN ĐĂNG KÝ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB TRA CỨU -->
+        <div id="tab-lookup" class="tab-content">
+            <div class="page-title">TRA CỨU KẾT QUẢ</div>
+            <div class="form-group">
+                <label>Nhập SĐT đã dùng đăng ký:</label>
+                <input type="text" id="lookupPhone" placeholder="Ví dụ: 0901234567">
+            </div>
+            <button class="btn-primary" onclick="lookupBooking()">TRA CỨU 🚀</button>
+            <div id="lookupResult" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- TAB ADMIN -->
+        <div id="tab-admin" class="tab-content">
+            <div class="page-title">QUẢN TRỊ ADMIN</div>
+            <div id="adminLogin">
+                <input type="password" id="adminPass" placeholder="Nhập mật khẩu...">
+                <button class="btn-primary" style="margin-top: 10px;" onclick="loginAdmin()">Đăng Nhập</button>
+            </div>
+            <div id="adminDashboard" style="display:none; margin-top: 20px;">
+                <p>Khu vực thống kê chi phí, số lượng sẽ hiển thị ở đây (Dữ liệu kéo từ Google Sheet).</p>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
