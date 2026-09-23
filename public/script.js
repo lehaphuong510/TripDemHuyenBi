@@ -1,261 +1,275 @@
-// --- IMGBB API KEY ---
 const IMGBB_API_KEY = '49ec155703a3d740e971a0c5bb680517';
+let configData = {};
+let currentHoldId = null;
+let timerInterval = null;
 
-// --- CHUYỂN TAB CHÍNH ---
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.main-nav button').forEach(btn => btn.classList.remove('active'));
-    
     document.getElementById(tabId).classList.add('active');
-    if(tabId === 'tab-register') document.getElementById('menu-register').classList.add('active');
-    if(tabId === 'tab-lookup') document.getElementById('menu-lookup').classList.add('active');
-    if(tabId === 'tab-admin') document.getElementById('menu-admin').classList.add('active');
-    
+    event.currentTarget.classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// --- CHUYỂN BƯỚC ĐĂNG KÝ ---
-function switchStep(stepNum) {
-    document.querySelectorAll('.step-content').forEach(step => step.classList.remove('active'));
-    document.querySelectorAll('.step-nav button').forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById('step' + stepNum).classList.add('active');
-    document.getElementById('nav-step' + stepNum).classList.add('active');
+function loadYoutube() {
+    const container = document.getElementById('yt-container');
+    container.innerHTML = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/AqoJWlIdqng?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 12px;"></iframe>`;
 }
 
-// --- LOGIC HIỆN FORM KHI TICK ĐỒNG Ý ---
+// 1. LOAD CONFIG & SLOTS
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch('/api/config');
+        configData = await res.json();
+        
+        // Update Cost in UI (Row 2, col 'Vé 1 người')
+        const costStr = configData.fixedCost ? Number(configData.fixedCost).toLocaleString('vi-VN') + " VNĐ" : "880.000 VNĐ";
+        document.getElementById('display-cost').innerText = costStr;
+
+        // Render Slot Cards
+        const container = document.getElementById('slot-container');
+        container.innerHTML = '';
+        
+        configData.options.forEach(opt => {
+            const total = parseInt(opt.limit) || 0;
+            const booked = parseInt(opt.booked) || 0;
+            const held = parseInt(opt.held) || 0;
+            const available = Math.max(0, total - booked - held);
+
+            const card = document.createElement('div');
+            card.className = 'slot-card';
+            card.onclick = () => selectSlot(card, opt.name, available);
+            card.innerHTML = `
+                <h3>${opt.name}</h3>
+                <div class="slot-available">Còn ${available} suất</div>
+                <div class="slot-breakdown">
+                    <span style="color:#a5d6a7;">✅ Đã ĐK: ${booked}</span>
+                    <span style="color:#ffcc80;">⏳ Đang thanh toán: ${held}</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (err) {
+        document.getElementById('slot-container').innerHTML = '<div style="color:red; text-align:center;">Lỗi tải dữ liệu. Vui lòng làm mới trang.</div>';
+    }
+});
+
+function selectSlot(cardEl, dotName, available) {
+    if (available <= 0) { alert("Rất tiếc, đợt này đã hết suất hoặc đang được giữ!"); return; }
+    
+    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+    cardEl.classList.add('selected');
+    
+    document.getElementById('selectedDot').value = dotName;
+    document.getElementById('selectedDotMax').value = available;
+    
+    const numInput = document.getElementById('numPeople');
+    numInput.max = available;
+    if (parseInt(numInput.value) > available) numInput.value = available;
+    
+    // Nếu khách đã tick đồng ý thì render lại input name
+    if(document.getElementById('agreeCheckbox').checked) renderParticipants();
+}
+
 function toggleForm() {
     const isAgreed = document.getElementById('agreeCheckbox').checked;
+    const dot = document.getElementById('selectedDot').value;
+    
+    if (isAgreed && !dot) {
+        alert("Vui lòng chọn đợt tham gia ở phía trên trước!");
+        document.getElementById('agreeCheckbox').checked = false;
+        return;
+    }
+    
     const form = document.getElementById('registrationForm');
     if (isAgreed) {
         form.style.display = 'block';
-        if (document.getElementById('participantsList').innerHTML === '') {
-            renderParticipants(); 
-        }
+        renderParticipants();
     } else {
         form.style.display = 'none';
     }
 }
 
-// --- RENDER INPUT TÊN THEO SỐ LƯỢNG NGƯỜI ---
 function renderParticipants() {
+    const max = parseInt(document.getElementById('selectedDotMax').value) || 1;
     let num = parseInt(document.getElementById('numPeople').value) || 1;
-    if (num > 20) { num = 20; document.getElementById('numPeople').value = 20; }
+    if (num > max) { num = max; document.getElementById('numPeople').value = max; alert(`Chỉ còn ${max} suất cho đợt này!`); }
     
     const container = document.getElementById('participantsList');
     container.innerHTML = ''; 
-
     for(let i = 1; i <= num; i++) {
         container.innerHTML += `
-            <div class="person-box">
-                <b>👤 Người thứ ${i}</b>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <div style="flex:2;">
-                        <input type="text" id="name_${i}" placeholder="Họ và tên" style="width:100%; padding:8px;">
-                    </div>
-                    <div style="flex:1;">
-                        <input type="number" id="yob_${i}" placeholder="Năm sinh" style="width:100%; padding:8px;">
-                    </div>
+            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; margin-bottom:10px;">
+                <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:5px;">👤 Người thứ ${i}</div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="name_${i}" placeholder="Họ và tên" style="flex:2;">
+                    <input type="number" id="yob_${i}" placeholder="Năm sinh" style="flex:1;">
                 </div>
             </div>
         `;
     }
 }
 
-// =======================================================
-// 1. TỰ ĐỘNG LOAD ĐỢT ĐĂNG KÝ TỪ GG SHEET KHI MỞ TRANG
-// =======================================================
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        const res = await fetch('/api/config');
-        const data = await res.json();
-        const select = document.getElementById('tripSelect');
-        select.innerHTML = '<option value="">-- Chọn đợt tham gia --</option>';
-
-        if (data.values && data.values.length > 1) {
-            // Bỏ qua dòng tiêu đề (index 0)
-            for (let i = 1; i < data.values.length; i++) {
-                let dotName = data.values[i][0];
-                let limit = data.values[i][1];
-                if (dotName) {
-                    select.innerHTML += `<option value="${dotName}">${dotName} (Tối đa ${limit} suất)</option>`;
-                }
-            }
-        }
-    } catch (err) {
-        console.error("Lỗi load config:", err);
-        document.getElementById('tripSelect').innerHTML = '<option value="">(Lỗi tải dữ liệu. Hãy refresh trang)</option>';
-    }
-});
-
-// =======================================================
-// 2. SUBMIT FORM: UPLOAD ẢNH & GỬI DỮ LIỆU LÊN SHEET
-// =======================================================
-async function submitRegistration() {
-    const btnSubmit = document.getElementById('btnSubmit');
-    const statusDiv = document.getElementById('submitStatus');
-    const fileInput = document.getElementById('billUpload');
+// 2. HOLD SLOT LOGIC
+async function holdSlotAndPay() {
+    const dot = document.getElementById('selectedDot').value;
     const phone = document.getElementById('phoneInput').value;
-    const dotThamGia = document.getElementById('tripSelect').value;
+    const num = parseInt(document.getElementById('numPeople').value);
 
-    if (!dotThamGia) { alert("Vui lòng chọn đợt tham gia!"); return; }
-    if (!phone) { alert("Vui lòng nhập SĐT đại diện!"); return; }
+    // Validate
+    let firstParticipant = document.getElementById('name_1').value;
+    if (!firstParticipant || !phone) { alert("Vui lòng nhập đầy đủ Tên người 1 và Số điện thoại!"); return; }
+
+    const btn = document.getElementById('btnHold');
+    btn.innerHTML = "ĐANG GIỮ CHỖ... ⏳"; btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/hold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dot: dot, sl: num })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            currentHoldId = data.holdId;
+            document.getElementById('registrationForm').style.display = 'none';
+            document.getElementById('paymentBox').style.display = 'block';
+            
+            // Tính tiền
+            const cost = parseInt(configData.fixedCost) || 880000;
+            document.getElementById('payTotalAmount').innerText = (cost * num).toLocaleString('vi-VN') + " VNĐ";
+            
+            // Cú pháp
+            let cleanName = firstParticipant.split(' ').pop().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase();
+            document.getElementById('paySyntax').innerText = `Tripdem ${cleanName} ${phone}`;
+            
+            startCountdown(15 * 60);
+        } else {
+            alert(data.message || "Lỗi giữ chỗ, có thể người khác vừa đăng ký suất cuối cùng!");
+            btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
+        }
+    } catch(err) {
+        alert("Lỗi kết nối!");
+        btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
+    }
+}
+
+function startCountdown(duration) {
+    let timer = duration, minutes, seconds;
+    const display = document.getElementById('countdownTimer');
+    
+    timerInterval = setInterval(function () {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+        display.textContent = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+        if (--timer < 0) {
+            clearInterval(timerInterval);
+            alert("Đã hết thời gian chuyển khoản, anh chị chưa đăng ký thành công 😥");
+            window.location.reload();
+        }
+    }, 1000);
+}
+
+// 3. SUBMIT FINAL
+async function submitFinalRegistration() {
+    const fileInput = document.getElementById('billUpload');
     if (fileInput.files.length === 0) { alert("Vui lòng tải lên ảnh Bill thanh toán!"); return; }
 
-    btnSubmit.disabled = true;
-    btnSubmit.innerHTML = "ĐANG TẢI ẢNH LÊN... ⏳";
-    statusDiv.innerHTML = "";
+    const btnSubmit = document.getElementById('btnSubmitFinal');
+    btnSubmit.disabled = true; btnSubmit.innerHTML = "ĐANG TẢI ẢNH LÊN... ⏳";
 
     try {
-        // A. Upload ảnh lên ImgBB
-        const file = fileInput.files[0];
         const formData = new FormData();
-        formData.append('image', file);
-
-        const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-            method: 'POST',
-            body: formData
-        });
-        const imgbbData = await imgbbResponse.json();
+        formData.append('image', fileInput.files[0]);
+        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+        const imgbbData = await imgbbRes.json();
         
         if (imgbbData.success) {
-            const billUrl = imgbbData.data.url;
             btnSubmit.innerHTML = "ĐANG LƯU DỮ LIỆU... 🚀";
-            
-            // B. Gom dữ liệu gửi lên Backend Cloudflare
             const num = parseInt(document.getElementById('numPeople').value);
             let ds_nguoi = [];
             for(let i=1; i<=num; i++) {
-                ds_nguoi.push({
-                    name: document.getElementById(`name_${i}`).value,
-                    yob: document.getElementById(`yob_${i}`).value
-                });
+                ds_nguoi.push({ name: document.getElementById(`name_${i}`).value, yob: document.getElementById(`yob_${i}`).value });
             }
 
             const payload = {
-                dot_tham_gia: dotThamGia,
+                dot_tham_gia: document.getElementById('selectedDot').value,
                 sl: num,
                 ds_nguoi: ds_nguoi,
-                phone: phone,
+                phone: document.getElementById('phoneInput').value,
                 phone_backup: document.getElementById('phoneBackup').value,
-                bill_url: billUrl,
-                mien_tru: document.getElementById('agreeCheckbox').checked
+                bill_url: imgbbData.data.url,
+                cost: parseInt(configData.fixedCost) || 880000,
+                holdId: currentHoldId
             };
 
-            const submitRes = await fetch('/api/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const submitRes = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const submitData = await submitRes.json();
 
             if (submitData.success) {
-                statusDiv.innerHTML = `🎉 Ghi nhận thành công! Mã Booking của bạn: <b>${submitData.bookingId}</b>`;
-                btnSubmit.style.display = 'none'; // Ẩn nút tránh click đúp
-            } else {
-                alert("Lỗi lưu dữ liệu lên Sheet. Vui lòng thử lại!");
-                btnSubmit.innerHTML = "XÁC NHẬN ĐĂNG KÝ";
-                btnSubmit.disabled = false;
+                clearInterval(timerInterval);
+                document.getElementById('countdownTimer').style.display = 'none';
+                document.getElementById('submitStatus').innerHTML = `🎉 GHI NHẬN THÀNH CÔNG! Mã Booking: <b>${submitData.bookingId}</b>`;
+                btnSubmit.style.display = 'none';
             }
-
         } else {
-            alert("Lỗi tải ảnh. Kích thước ảnh có thể quá lớn, vui lòng thử lại!");
-            btnSubmit.innerHTML = "XÁC NHẬN ĐĂNG KÝ";
-            btnSubmit.disabled = false;
+            alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false;
         }
-
-    } catch (error) {
-        console.error("Lỗi:", error);
-        alert("Có lỗi mạng xảy ra, vui lòng thử lại!");
-        btnSubmit.innerHTML = "XÁC NHẬN ĐĂNG KÝ";
-        btnSubmit.disabled = false;
+    } catch (err) {
+        alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false;
     }
 }
 
-// =======================================================
-// 3. TRA CỨU ĐƠN (GỌI BACKEND & CẬP NHẬT GIAO DIỆN)
-// =======================================================
+// 4. TRA CỨU & BAY BƯỚM
 async function lookupBooking() {
     const phone = document.getElementById('lookupPhone').value;
     const resultDiv = document.getElementById('lookupResult');
-    
     if(!phone) { alert("Vui lòng nhập SĐT!"); return; }
     
-    resultDiv.innerHTML = "<i>Đang tìm kiếm dữ liệu... ⏳</i>";
+    resultDiv.innerHTML = "<div style='text-align:center;'><i>Đang tìm kiếm... ⏳</i></div>";
     
     try {
-        const res = await fetch('/api/lookup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone })
-        });
-        
+        const res = await fetch('/api/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) });
         const data = await res.json();
         
-        if (!data.success) {
-            resultDiv.innerHTML = `<div style="color:red; font-weight:bold; padding: 15px; border: 1px solid red; border-radius: 6px;">${data.message}</div>`;
-            return;
-        }
+        if (!data.success) { resultDiv.innerHTML = `<div class="glass-box" style="color:red; text-align:center;">${data.message}</div>`; return; }
 
-        // Tạo bảng danh sách người tham gia
-        let dsHtml = `<table style="width:100%; border-collapse: collapse; margin-top:10px; font-size: 0.95rem;">
-            <tr style="background:#198754; color:white;">
-                <th style="padding:8px; border:1px solid #ddd; text-align: left;">Họ và tên</th>
-                <th style="padding:8px; border:1px solid #ddd; text-align: center;">Năm sinh</th>
-            </tr>`;
-        data.ds_nguoi.forEach(ng => {
-            dsHtml += `<tr>
-                <td style="padding:8px; border:1px solid #ddd; background: #fff;">${ng.name}</td>
-                <td style="padding:8px; border:1px solid #ddd; text-align:center; background: #fff;">${ng.yob}</td>
-            </tr>`;
-        });
-        dsHtml += `</table>`;
+        let dsHtml = `<div style="text-align:left; font-size: 0.9rem; margin-top:10px;">`;
+        data.ds_nguoi.forEach(ng => { dsHtml += `• ${ng.name} (${ng.yob})<br>`; });
+        dsHtml += `</div>`;
 
-        // Render Lời chào & Trạng thái
         let statusHtml = "";
         if (!data.isChecked) {
-            statusHtml = `
-                <div class="status-box status-pending">
-                    <h3 style="margin-top:0;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
-                    <p>Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
-                </div>
-            `;
+            statusHtml = `<div class="glass-box" style="background: rgba(255,235,59,0.2); border-color:#FBC02D; text-align:center;">
+                <h3 style="color:#FFC107; margin-top:0;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
+                <p>Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
+            </div>`;
         } else {
-            statusHtml = `
-                <div class="status-box status-success">
-                    <h3 style="margin-top:0;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
-                    <p>🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
-                    <p style="font-size: 0.9rem; margin-top: 10px;"><i>Anh chị nhớ tham gia group Zalo BTC để nhận thông báo nhé!</i></p>
-                </div>
-            `;
+            statusHtml = `<div class="glass-box" style="background: rgba(76,175,80,0.2); border-color:#4CAF50; text-align:center;">
+                <h3 style="color:#4CAF50; margin-top:0;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
+                <p>🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn! Cảm ơn anh chị đã quan tâm tham gia chương trình.</p>
+            </div>`;
+            createButterflies(); // Gọi hàm bay bướm
         }
 
-        // Gom toàn bộ UI
-        resultDiv.innerHTML = statusHtml + `
-            <div style="background:#f9f9f9; padding:15px; border:1px solid #ddd; border-radius:6px;">
-                <b style="color: #0F5132; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b><br>
-                <div style="margin-top: 8px; font-size: 0.95rem;">
-                    • <b>Đợt tham gia:</b> ${data.dot}<br>
-                    • <b>SĐT Đại diện:</b> ${data.phoneDisplay}<br>
-                    • <b>Số lượng:</b> ${data.sl} người
-                </div>
-                ${dsHtml}
-            </div>
-        `;
-
-    } catch (err) {
-        resultDiv.innerHTML = `<div style="color:red;">Lỗi kết nối máy chủ. Vui lòng thử lại sau.</div>`;
-        console.error(err);
-    }
+        resultDiv.innerHTML = statusHtml + `<div class="glass-box" style="text-align:center;">
+            <b style="color: var(--glow-yellow); text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b><br>
+            Mã Đơn: <b>${data.bookingId}</b><br>Đợt: ${data.dot}<br>SĐT Đại diện: ${data.phoneDisplay}<br>Số lượng: ${data.sl} người
+            ${dsHtml}
+        </div>`;
+    } catch (err) { resultDiv.innerHTML = `<div class="glass-box" style="color:red;">Lỗi kết nối máy chủ.</div>`; }
 }
 
-// --- MÔ PHỎNG ADMIN ---
-function loginAdmin() {
-    const pass = document.getElementById('adminPass').value;
-    if(pass === "0519") {
-        document.getElementById('adminLogin').style.display = "none";
-        document.getElementById('adminDashboard').style.display = "block";
-    } else {
-        alert("Sai mật khẩu!");
+function createButterflies() {
+    for (let i = 0; i < 15; i++) {
+        let b = document.createElement("img");
+        b.src = "assets/images/butterfly.png";
+        b.className = "flying-butterfly";
+        b.style.left = Math.random() * 100 + "vw";
+        b.style.animationDuration = (Math.random() * 3 + 3) + "s";
+        b.style.animationDelay = (Math.random() * 2) + "s";
+        document.body.appendChild(b);
+        setTimeout(() => b.remove(), 6000);
     }
 }
