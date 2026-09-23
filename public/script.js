@@ -7,7 +7,10 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.main-nav button').forEach(btn => btn.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
-    event.currentTarget.classList.add('active');
+    
+    let btnMap = { 'tab-gioithieu': 0, 'tab-lichtrinh': 1, 'tab-dangky': 2, 'tab-tracuu': 3 };
+    document.querySelectorAll('.main-nav button')[btnMap[tabId]].classList.add('active');
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -18,9 +21,15 @@ function loadYoutube() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
+        console.log("Đang tải Config từ Google Sheet...");
         const res = await fetch('/api/config');
         configData = await res.json();
+        console.log("Dữ liệu lấy được:", configData);
         
+        if (configData.error) {
+            throw new Error(configData.error);
+        }
+
         const costVal = Number(configData.fixedCost) || 0;
         const schemeVal = Number(configData.schemeKhuyenMai) || 0;
         const discountVal = costVal - schemeVal;
@@ -53,10 +62,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 container.appendChild(card);
             });
         } else {
-            container.innerHTML = '<div style="color:var(--glow-yellow); text-align:center; width:100%;">Hiện chưa có đợt đăng ký nào.</div>';
+            container.innerHTML = '<div style="color:var(--glow-yellow); text-align:center; width:100%; font-size:1.2rem;">Hiện chưa có đợt đăng ký nào.</div>';
         }
     } catch (err) {
-        document.getElementById('slot-container').innerHTML = '<div style="color:red; text-align:center; width:100%; background:rgba(255,0,0,0.1); padding:10px; border-radius:8px;">Lỗi tải dữ liệu. Vui lòng kiểm tra lại cấu trúc Google Sheet hoặc biến môi trường GCP_KEY.</div>';
+        console.error("Lỗi:", err);
+        document.getElementById('slot-container').innerHTML = `<div style="color:#FFCDD2; text-align:center; width:100%; background:rgba(211,47,47,0.8); padding:15px; border-radius:8px;"><b>Lỗi tải dữ liệu.</b><br>Chi tiết: ${err.message}<br>Vui lòng kiểm tra lại cấu trúc Sheet hoặc biến môi trường GCP.</div>`;
     }
 });
 
@@ -104,11 +114,11 @@ function renderParticipants() {
     container.innerHTML = ''; 
     for(let i = 1; i <= num; i++) {
         container.innerHTML += `
-            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; margin-bottom:10px;">
-                <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:5px;">👤 Người thứ ${i}</div>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="name_${i}" placeholder="Họ và tên" style="flex:2;">
-                    <input type="number" id="yob_${i}" placeholder="Năm sinh" style="flex:1;">
+            <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 8px; margin-bottom:12px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:8px; font-size:1.1rem;">👤 Người thứ ${i}</div>
+                <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                    <input type="text" id="name_${i}" placeholder="Họ và tên" style="flex:2; min-width:150px;">
+                    <input type="number" id="yob_${i}" placeholder="Năm sinh" style="flex:1; min-width:100px;">
                 </div>
             </div>
         `;
@@ -140,12 +150,7 @@ async function holdSlotAndPay() {
             const schemeVal = Number(configData.schemeKhuyenMai) || 0;
             const slKhuyenMai = Number(configData.slKhuyenMai) || 999;
             
-            if (num >= slKhuyenMai) {
-                totalCost = (costVal - schemeVal) * num;
-            } else {
-                totalCost = costVal * num;
-            }
-            
+            if (num >= slKhuyenMai) { totalCost = (costVal - schemeVal) * num; } else { totalCost = costVal * num; }
             document.getElementById('payTotalAmount').innerText = totalCost.toLocaleString('vi-VN') + " VNĐ";
             
             let cleanName = firstParticipant.split('-')[0].trim().split(' ').pop().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase();
@@ -157,7 +162,7 @@ async function holdSlotAndPay() {
             btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
         }
     } catch(err) {
-        alert("Lỗi kết nối!"); btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
+        alert("Lỗi kết nối mạng!"); btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
     }
 }
 
@@ -241,26 +246,26 @@ async function lookupBooking() {
         
         if (!data.success) { resultDiv.innerHTML = `<div class="glass-box" style="color:var(--glow-yellow); border-color:#f44336; text-align:center;">${data.message}</div>`; return; }
 
-        let dsHtml = `<div style="text-align:left; font-size: 0.95rem; margin-top:10px;">`;
+        let dsHtml = `<div style="text-align:left; font-size: 1.05rem; margin-top:10px;">`;
         data.ds_nguoi.forEach(ng => { dsHtml += `• ${ng.name} (${ng.yob})<br>`; });
         dsHtml += `</div>`;
 
         let statusHtml = "";
         if (!data.isChecked) {
             statusHtml = `<div class="glass-box" style="background: rgba(255,235,59,0.2); border-color:#FBC02D; text-align:center;">
-                <h3 style="color:#FFC107; margin-top:0;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
-                <p style="margin-bottom:0;">Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
+                <h3 style="color:#FFC107; margin-top:0; font-size: 1.5rem;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
+                <p style="margin-bottom:0; font-size: 1.1rem;">Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
             </div>`;
         } else {
             statusHtml = `<div class="glass-box" style="background: rgba(76,175,80,0.2); border-color:#4CAF50; text-align:center;">
-                <h3 style="color:#4CAF50; margin-top:0;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
-                <p>🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
+                <h3 style="color:#4CAF50; margin-top:0; font-size: 1.5rem;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
+                <p style="font-size: 1.1rem;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
             </div>`;
             createButterflies();
         }
 
         resultDiv.innerHTML = statusHtml + `<div class="glass-box" style="background:rgba(0,0,0,0.3);">
-            <b style="color: var(--glow-yellow); text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b><br><br>
+            <b style="color: var(--glow-yellow); text-transform: uppercase; font-size: 1.2rem;">THÔNG TIN ĐĂNG KÝ:</b><br><br>
             Mã Đơn: <b>${data.bookingId}</b><br>Đợt: ${data.dot}<br>SĐT Đại diện: ${data.phoneDisplay}<br>Số lượng: ${data.sl} người
             ${dsHtml}
         </div>`;
