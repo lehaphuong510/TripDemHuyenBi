@@ -10,18 +10,30 @@ export async function onRequest(context) {
     if (url.pathname === '/api/config' && request.method === 'GET') {
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
-      if(!dataConfig.values || dataConfig.values.length === 0) throw new Error("No data in Config");
+      if(!dataConfig.values || dataConfig.values.length === 0) throw new Error("Chưa nhận được dữ liệu từ tab Config. Vui lòng kiểm tra lại cấu trúc Google Sheet.");
       
-      const headers = dataConfig.values[0];
+      const headers = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
+      
       const idxTenDot = headers.indexOf('Nội dung option');
       const idxGioiHan = headers.indexOf('SL giới hạn');
       const idxCost = headers.indexOf('Vé 1 người');
       const idxSLKM = headers.indexOf('SL khuyến mãi');
       const idxSchemeKM = headers.indexOf('Scheme khuyến mãi');
       
-      const fixedCost = dataConfig.values[1][idxCost];
-      const slKhuyenMai = dataConfig.values[1][idxSLKM];
-      const schemeKhuyenMai = dataConfig.values[1][idxSchemeKM];
+      if(idxTenDot === -1 || idxGioiHan === -1) throw new Error("Không tìm thấy cột 'Nội dung option' hoặc 'SL giới hạn'. Hãy kiểm tra chính tả dòng 1 tab Config.");
+
+      // Hàm ép kiểu và làm sạch dữ liệu (chỉ lấy số, bỏ qua chấm/phẩy/chữ)
+      const parseNumber = (val) => {
+          if (!val) return 0;
+          return parseInt(String(val).replace(/[^\d]/g, '')) || 0;
+      };
+
+      // Đọc row 2 (index 1), cẩn thận trường hợp Google Sheet cắt ô trống
+      const row2 = dataConfig.values[1] || [];
+      const fixedCost = parseNumber(row2[idxCost]);
+      const slKhuyenMai = parseNumber(row2[idxSLKM]);
+      const schemeKhuyenMai = parseNumber(row2[idxSchemeKM]);
+      
       let options = [];
 
       const resData = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:G?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
@@ -44,12 +56,12 @@ export async function onRequest(context) {
                   heldMap[parsed.dot] = (heldMap[parsed.dot] || 0) + parsed.sl;
               }
           }
-      } catch(e) {} // Bỏ qua nếu KV chưa setup xong
+      } catch(e) {} 
 
       for (let i = 1; i < dataConfig.values.length; i++) {
         let dotName = dataConfig.values[i][idxTenDot];
         if (dotName && dotName.trim() !== "") {
-            options.push({ name: dotName, limit: parseInt(dataConfig.values[i][idxGioiHan]) || 0, booked: bookedMap[dotName] || 0, held: heldMap[dotName] || 0 });
+            options.push({ name: dotName, limit: parseNumber(dataConfig.values[i][idxGioiHan]), booked: bookedMap[dotName] || 0, held: heldMap[dotName] || 0 });
         }
       }
       return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
@@ -103,7 +115,6 @@ export async function onRequest(context) {
           if(shortData.values[i][0] === bookingId && shortData.values[i][3] === "TRUE") { isChecked = true; break; }
       }
 
-      // Xử lý xưng hô nếu khách không nhập dấu gạch ngang
       let rawName = matched[0][2] || "Anh/Chị";
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
       let ds_nguoi = matched.map(r => ({ name: r[2], yob: r[3] }));
