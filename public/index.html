@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng Ký Trip Đêm Huyền Bí</title>
-    <!-- Fonts & Icons -->
+    <link rel="icon" href="assets/images/butterfly.png">
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@700;900&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* ================= STYLE DNA ================= */
         :root {
             --bg-navy: #091221;
             --bg-teal: #0B2B26;
@@ -24,45 +23,48 @@
             background: var(--bg-navy) url('assets/images/Backgroundweb.webp') no-repeat center center fixed;
             background-size: cover;
             color: var(--text-main);
-            margin: 0; padding: 0; padding-bottom: 80px;
+            margin: 0; padding: 0; padding-bottom: 25vh; 
         }
 
         @media (max-width: 640px) {
             body { background-image: url('assets/images/Backgroundmobile.webp'); }
         }
 
-        /* Hiệu ứng đom đóm lấp lánh nền */
-        .firefly { position: fixed; background: var(--glow-yellow); width: 3px; height: 3px; border-radius: 50%; box-shadow: 0 0 10px 2px var(--glow-yellow); animation: float 5s infinite ease-in-out; pointer-events: none; z-index: 0; }
-        @keyframes float { 0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; } 50% { transform: translateY(-20px) translateX(10px); opacity: 1; } }
+        .firefly { position: fixed; background: var(--glow-yellow); width: 4px; height: 4px; border-radius: 50%; box-shadow: 0 0 12px 3px var(--glow-yellow); animation: float 4s infinite ease-in-out; pointer-events: none; z-index: 0; }
+        @keyframes float { 0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; } 50% { transform: translateY(-30px) translateX(15px); opacity: 1; } }
 
         .container { max-width: 900px; margin: 0 auto; padding: 15px; position: relative; z-index: 10; }
 
-        /* HEADER & LOGO */
-        .header-logo { text-align: center; margin-bottom: 10px; }
+        .header-logo { text-align: center; margin-bottom: 10px; position: relative; }
         .header-logo img.logo { height: 50px; }
-        .header-logo img.title { width: 25%; min-width: 200px; filter: drop-shadow(0 -10px 20px rgba(255,215,0,0.3)); margin-top: 10px; }
-        @media (max-width: 640px) { .header-logo img.title { width: 40%; } }
+        .header-logo img.title { width: 50%; min-width: 250px; filter: drop-shadow(0 -15px 30px rgba(255,215,0,0.6)); margin-top: 10px; }
+        @media (max-width: 640px) { .header-logo img.title { width: 60%; } }
 
-        /* MENU BAR STICKY */
         .main-nav { 
             display: flex; gap: 5px; position: sticky; top: 10px; z-index: 100;
-            background: rgba(11, 43, 38, 0.8); backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border); border-radius: 30px; padding: 5px;
+            background: rgba(11, 43, 38, 0.85); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: 30px; padding: 8px;
         }
         .main-nav button { 
-            flex: 1; background: transparent; color: white; border: none; padding: 12px 5px;
-            font-family: 'Mulish', sans-serif; font-size: 0.9rem; font-weight: bold; border-radius: 25px;
-            cursor: pointer; transition: 0.3s; text-transform: uppercase;
+            flex: 1; background: transparent; color: white; border: none; padding: 10px 5px;
+            font-family: 'Mulish', sans-serif; font-size: 0.95rem; font-weight: bold; border-radius: 25px;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; line-height: 1.3;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
         }
         .main-nav button:hover, .main-nav button.active { 
-            background: rgba(255, 215, 0, 0.15); color: var(--glow-yellow);
-            text-shadow: 0 0 8px var(--glow-yellow); font-weight: 900;
+            color: var(--glow-yellow); text-shadow: 0 0 10px var(--glow-yellow); font-weight: 900;
         }
-        .menu-register-btn { position: relative; }
-        .menu-register-btn img { position: absolute; top: -10px; right: 10px; width: 20px; filter: drop-shadow(0 0 5px var(--glow-yellow)); animation: flutter 0.5s infinite alternate; }
-        @keyframes flutter { from { transform: rotate(-5deg); } to { transform: rotate(5deg) translateY(-2px); } }
+        .menu-register-btn { text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+        .menu-register-btn img { width: 24px; filter: drop-shadow(0 0 8px var(--glow-yellow)); animation: flutter 0.6s infinite alternate; }
+        
+        .br-mobile { display: none; }
+        @media (max-width: 640px) { 
+            .br-mobile { display: block; } 
+            .main-nav button { font-size: 0.85rem; padding: 8px 2px; }
+        }
 
-        /* TAB CONTENT & GLASSMORPHISM */
+        @keyframes flutter { from { transform: rotate(-5deg); } to { transform: rotate(5deg) translateY(-3px); } }
+
         .tab-content { display: none; animation: fadeIn 0.4s; margin-top: 20px; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -70,21 +72,20 @@
         .glass-box { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
         h2.section-title { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); text-transform: uppercase; text-align: center; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-bottom: 10px; margin-top: 0; }
 
-        /* GRID CARDS (GIỚI THIỆU & VẬT DỤNG) */
-        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
-        .info-card { background: linear-gradient(180deg, rgba(255,215,0,0.85) 0%, rgba(218,165,32,0.85) 100%); color: var(--bg-navy); border-radius: 12px; padding: 15px; text-align: center; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .info-card img { width: 50px; margin-bottom: 10px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
-        .info-card h4 { font-family: 'Mulish', sans-serif; margin: 0 0 8px 0; text-transform: uppercase; font-size: 1rem; color: #0B2B26; }
-        .info-card p { margin: 0; font-size: 0.85rem; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .info-card { background: linear-gradient(180deg, rgba(255,215,0,0.9) 0%, rgba(218,165,32,0.9) 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .info-card img { width: 55px; margin-bottom: 12px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        
+        .card-line1 { font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; margin-bottom: 2px; line-height: 1.2; }
+        .card-line2 { font-weight: 900; font-size: 1.05rem; color: #0B2B26; text-transform: uppercase; line-height: 1.2; }
+        .card-line3 { font-size: 0.85rem; font-style: italic; margin-top: 12px; line-height: 1.4; color: #222; }
 
-        /* LỊCH TRÌNH TIMELINE */
         .timeline-item { padding: 12px 15px; margin-bottom: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border-left: 4px solid var(--glow-yellow); transition: 0.3s; cursor: pointer; display: flex; align-items: center; }
         .timeline-item:hover { background: rgba(255,215,0,0.1); transform: translateX(5px); }
         .timeline-time { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); font-weight: 900; width: 65px; flex-shrink: 0; }
         .timeline-hover-icon { display: none; width: 24px; margin-left: auto; }
         .timeline-item:hover .timeline-hover-icon { display: block; animation: flutter 0.3s infinite; }
 
-        /* ĐĂNG KÝ: SLOT CARDS */
         .slot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .slot-card { background: rgba(25, 135, 84, 0.9); border: 2px solid #4CAF50; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
         .slot-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); }
@@ -93,60 +94,92 @@
         .slot-breakdown { display: flex; justify-content: space-between; font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; }
         .slot-available { font-size: 1.4rem; font-weight: bold; color: var(--glow-yellow); margin: 10px 0; }
 
-        /* FORM BẮT MẮT */
         input[type="text"], input[type="number"], input[type="tel"] { width: 100%; padding: 12px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; font-family: 'Quicksand'; font-weight: bold; color: #333; margin-top: 5px; box-sizing: border-box; }
-        .btn-primary { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--bg-navy); border: none; padding: 15px; width: 100%; border-radius: 8px; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; margin-top: 15px; }
+        .btn-primary { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--bg-navy); border: none; padding: 12px; width: 100%; border-radius: 8px; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; margin-top: 15px; line-height: 1.2; }
         .btn-primary:hover { box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1.02); }
         .btn-primary:disabled { background: #666; color: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* THANH TOÁN & ĐẾM NGƯỢC */
         .payment-box { background: rgba(255,255,255,0.95); color: #000; padding: 20px; border-radius: 12px; text-align: center; border: 3px dashed #198754; display: none; }
         .timer { font-family: 'Mulish'; font-size: 2rem; color: #D32F2F; font-weight: 900; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* FOOTER & FLOATING */
-        .site-footer { position: fixed; bottom: 0; width: 100%; background: rgba(11, 43, 38, 0.95); backdrop-filter: blur(5px); border-top: 1px solid var(--glass-border); padding: 10px 0; display: flex; justify-content: center; gap: 20px; z-index: 100; }
-        .site-footer img { width: 35px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
-        .site-footer img:hover { transform: translateY(-5px); }
+        .site-footer { position: fixed; bottom: 0; width: 100%; background: rgba(11, 43, 38, 0.95); backdrop-filter: blur(8px); border-top: 1px solid var(--glass-border); padding: 12px 0; display: flex; align-items: center; justify-content: center; z-index: 100; flex-wrap: wrap; }
+        .footer-content { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.1); padding: 8px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.15); }
+        .footer-text { font-family: 'Mulish'; font-weight: 900; font-size: 0.9rem; color: var(--glow-yellow); letter-spacing: 0.5px; }
+        .site-footer img { width: 32px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
+        .site-footer img:hover { transform: translateY(-4px) scale(1.1); filter: drop-shadow(0 4px 8px var(--glow-yellow)); }
 
-        /* BƯƠM BƯỚM EFFECT */
-        .flying-butterfly { position: fixed; width: 30px; z-index: 9999; pointer-events: none; animation: flyUp 4s linear forwards; }
+        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: flyUp 4s linear forwards; }
         @keyframes flyUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } }
+
+        .lookup-flex { display: flex; gap: 10px; align-items: flex-end; justify-content: center; }
+        .lookup-flex .form-group { flex: 1; max-width: 350px; }
+        .lookup-flex .btn-primary { width: auto; padding: 12px 25px; margin-top: 0; flex-shrink: 0; }
+        @media (max-width: 640px) { .lookup-flex { flex-direction: column; align-items: center; } .lookup-flex .btn-primary { width: 100%; max-width: 350px; margin-top: 10px; } }
     </style>
 </head>
 <body>
-    <!-- Rải đom đóm -->
-    <div class="firefly" style="top:20%; left:10%;"></div>
-    <div class="firefly" style="top:50%; left:80%;"></div>
-    <div class="firefly" style="top:80%; left:30%;"></div>
+    <div class="firefly" style="top:15%; left:20%;"></div>
+    <div class="firefly" style="top:25%; left:75%;"></div>
+    <div class="firefly" style="top:35%; left:40%;"></div>
+    <div class="firefly" style="top:10%; left:60%; width:5px; height:5px;"></div>
+    <div class="firefly" style="top:30%; left:10%;"></div>
+    <div class="firefly" style="top:45%; left:85%;"></div>
+    <div class="firefly" style="top:60%; left:30%;"></div>
+    <div class="firefly" style="top:80%; left:70%;"></div>
 
     <div class="container">
-        <!-- HEADER -->
         <div class="header-logo">
             <img src="assets/images/logowhite.png" alt="Logo" class="logo"><br>
             <img src="assets/images/Title.png" alt="Đêm Huyền Bí" class="title">
         </div>
 
-        <!-- MENU RADIO -->
         <div class="main-nav">
-            <button class="active" onclick="switchTab('tab-gioithieu')">GIỚI THIỆU</button>
-            <button onclick="switchTab('tab-lichtrinh')">LỊCH TRÌNH</button>
+            <button class="active" onclick="switchTab('tab-gioithieu')">GIỚI<br class="br-mobile">THIỆU</button>
+            <button onclick="switchTab('tab-lichtrinh')">LỊCH<br class="br-mobile">TRÌNH</button>
             <button class="menu-register-btn" onclick="switchTab('tab-dangky')">
-                ĐĂNG KÝ <img src="assets/images/butterfly.png" alt="glow">
+                <span>ĐĂNG<br class="br-mobile">KÝ</span> <img src="assets/images/butterfly.png" alt="glow">
             </button>
-            <button onclick="switchTab('tab-tracuu')">TRA CỨU</button>
+            <button onclick="switchTab('tab-tracuu')">TRA<br class="br-mobile">CỨU</button>
         </div>
 
-        <!-- TAB 1: GIỚI THIỆU -->
         <div id="tab-gioithieu" class="tab-content active">
             <div class="glass-box">
-                <p>🦎🐸 <b>“Đêm huyền bí”</b> 🐍🦜 là một trải nghiệm đầy mê hoặc, mở ra cánh cửa vào một thế giới bí ẩn khó có thể nhìn thấy vào ban ngày. Các loài sinh vật ban đêm sẽ hiện ra trước mắt bạn đầy ấn tượng và lôi cuốn. Cảm nhận không khí trong lành, những dấu vết của các loài thú lớn, hay sự ngụy trang tài tình của các loài sinh vật nhỏ bé sẽ dần lộ diện...</p>
-                <p>🐝🐃🦗 Trong hành trình “Đêm huyền bí” 🐌🕷️🐚, bạn sẽ được trang bị đèn pin và có sự hướng dẫn của các chuyên gia dày dặn kinh nghiệm cùng kiểm lâm địa phương.</p>
+                <h2 class="section-title">GIỚI THIỆU</h2>
+                <p>🦎🐸“Đêm huyền bí”🐍🦜 là một trải nghiệm đầy mê hoặc, mở ra cánh cửa vào một thế giới bí ẩn khó có thể nhìn thấy vào ban ngày. Các loài sinh vật ban đêm sẽ hiện ra trước mắt bạn đầy ấn tượng và lôi cuốn. Cảm nhận không khí trong lành, những dấu vết của các loài thú lớn để lại trên đường đi, hay sự ngụy trang tài tình của các loài sinh vật nhỏ bé sẽ dần lộ diện để bạn khám phá những bí mật ẩn sâu bên trong khu rừng. Mỗi bước chân sẽ là một cuộc phiêu lưu, một cơ hội để bạn tìm hiểu và kết nối sâu sắc hơn với thế giới tự nhiên đầy lý thú này.</p>
+                <p>🐝🐃🦗Trong hành trình “Đêm huyền bí”🐌🕷️🐚, bạn sẽ được trang bị đèn pin và có sự hướng dẫn của các chuyên gia dày dặn kinh nghiệm cùng kiểm lâm địa phương để khám phá những điều thú vị về các loài sinh vật trong đêm tối một cách an toàn, trực quan.</p>
             </div>
 
-            <!-- Youtube Lazy Load -->
-            <div class="glass-box" style="text-align: center; padding: 10px;">
-                <h3 style="font-family: Mulish; color: var(--glow-yellow);">CÙNG KHÁM PHÁ TRIP VỚI BẠN NHỎ KHANG NHA</h3>
+            <h2 class="section-title">THÔNG TIN TRIP</h2>
+            <div class="grid-cards">
+                <div class="info-card">
+                    <img src="assets/images/age.png">
+                    <div class="card-line1">ĐỘ TUỔI</div>
+                    <div class="card-line2">5 TUỔI TRỞ LÊN</div>
+                    <div class="card-line3">Trẻ từ 8 tuổi có thể đi một mình<br>Trẻ dưới 8 tuổi cần có phụ huynh đi kèm</div>
+                </div>
+                <div class="info-card">
+                    <img src="assets/images/time.png">
+                    <div class="card-line1">THỜI GIAN</div>
+                    <div class="card-line2">13:00 - 22:00</div>
+                    <div class="card-line3">Đi về trong ngày<br>Khởi hành tại Cung Văn hóa Lao Động</div>
+                </div>
+                <div class="info-card">
+                    <img src="assets/images/location.png">
+                    <div class="card-line1">ĐỊA ĐIỂM</div>
+                    <div class="card-line2">RỪNG MÃ ĐÀ</div>
+                    <div class="card-line3">Khu bảo tồn Thiên nhiên<br>Đồng Nai</div>
+                </div>
+                <div class="info-card">
+                    <img src="assets/images/cost.png">
+                    <div class="card-line1">CHI PHÍ 1 SUẤT</div>
+                    <div class="card-line2"><span id="display-cost">...</span> VNĐ</div>
+                    <div class="card-line3">Đăng ký từ <span id="display-slkm">...</span> trở lên ưu đãi còn <span id="display-discount">...</span> VNĐ/ suất<br><br>Bao gồm bảo hiểm, xe đưa đón, ăn uống, dịch vụ Khu Bảo tồn, vật dụng đi rừng</div>
+                </div>
+            </div>
+
+            <div class="glass-box" style="text-align: center; padding: 15px; margin-top: 25px;">
+                <h3 style="font-family: Mulish; color: var(--glow-yellow); margin-top:0;">CÙNG KHÁM PHÁ TRIP VỚI BẠN NHỎ KHANG NHA</h3>
                 <div id="yt-container" style="position: relative; width: 100%; max-width: 560px; margin: auto; cursor: pointer; border-radius: 12px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2);" onclick="loadYoutube()">
                     <img src="https://img.youtube.com/vi/AqoJWlIdqng/maxresdefault.jpg" style="width: 100%; display: block;" alt="Thumbnail">
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,0,0,0.8); width: 60px; height: 40px; border-radius: 10px; display: flex; justify-content: center; align-items: center;">
@@ -154,61 +187,48 @@
                     </div>
                 </div>
             </div>
-
-            <h2 class="section-title">THÔNG TIN TRIP</h2>
-            <div class="grid-cards">
-                <div class="info-card"><img src="assets/images/age.png"><h4>ĐỘ TUỔI</h4><p>5 TUỔI TRỞ LÊN<br>Trẻ từ 8t tự đi<br>Dưới 8t cần phụ huynh</p></div>
-                <div class="info-card"><img src="assets/images/time.png"><h4>THỜI GIAN</h4><p>13:00 - 22:00<br>Đi về trong ngày<br>Khởi hành tại Q1</p></div>
-                <div class="info-card"><img src="assets/images/location.png"><h4>ĐỊA ĐIỂM</h4><p>RỪNG MÃ ĐÀ<br>Khu bảo tồn TN Đồng Nai</p></div>
-                <div class="info-card"><img src="assets/images/cost.png"><h4>CHI PHÍ</h4><p><span id="display-cost">Đang tải...</span><br>Bao gồm xe, ăn, bảo hiểm</p></div>
-            </div>
         </div>
 
-        <!-- TAB 2: LỊCH TRÌNH -->
         <div id="tab-lichtrinh" class="tab-content">
             <div class="glass-box">
                 <h2 class="section-title">LỊCH TRÌNH</h2>
-                <div class="timeline-item"><div class="timeline-time">12h45</div><div>Tập trung tại Cung văn hóa lao động (Q1)</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
+                <div class="timeline-item"><div class="timeline-time">12h45</div><div>Tập trung tại Cung văn hóa lao động (55B Nguyễn Thị Minh Khai, Q1)</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
                 <div class="timeline-item"><div class="timeline-time">13h00</div><div>Khởi hành đến Khu bảo tồn TN-VH Đồng Nai</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">15h00</div><div>Tham quan Bảo tàng "Đa dạng sinh học"</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
+                <div class="timeline-item"><div class="timeline-time">15h00</div><div>Tham quan Bảo tàng "Đa dạng sinh học rừng Mã Đà"</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
                 <div class="timeline-item"><div class="timeline-time">16h30</div><div>Di chuyển vào rừng Mã Đà</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
                 <div class="timeline-item"><div class="timeline-time">17h00</div><div>Ăn tối, nhận đèn pin, dặn dò</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">17h45</div><div>Trải nghiệm "Đêm huyền bí"</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">20h00</div><div>Di chuyển về lại TP.HCM</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">22h00</div><div>Trả khách tại điểm đón</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
+                <div class="timeline-item"><div class="timeline-time">17h45</div><div>Trải nghiệm "Đêm huyền bí" cùng các chuyên gia</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
+                <div class="timeline-item"><div class="timeline-time">20h00</div><div>Di chuyển về lại Cung văn hóa lao động</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
+                <div class="timeline-item"><div class="timeline-time">22h00</div><div>Trả khách tại Cung văn hóa lao động</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
             </div>
 
             <h2 class="section-title">VẬT DỤNG CẦN THIẾT</h2>
-            <div class="grid-cards">
-                <div class="info-card"><img src="assets/images/aoquan.png"><h4>Áo quần dài</h4><p>Che chắn cây gai</p></div>
-                <div class="info-card"><img src="assets/images/giayvo.png"><h4>Giày bata, vớ cao</h4><p>Tự tin sải bước</p></div>
-                <div class="info-card"><img src="assets/images/sotay.png"><h4>Sổ tay & bút</h4><p>Ghi chép thú vị</p></div>
-                <div class="info-card"><img src="assets/images/balo.png"><h4>Balo gọn nhẹ</h4><p>Chứa vật cá nhân</p></div>
-                <div class="info-card"><img src="assets/images/binhnuoc.png"><h4>Bình nước</h4><p>Tối thiểu 500ml (*)</p></div>
-                <div class="info-card"><img src="assets/images/aomua.png"><h4>Áo mưa</h4><p>Dự phòng mưa (*)</p></div>
-                <div class="info-card"><img src="assets/images/headlamp.png"><h4>Đèn đeo đầu</h4><p>Soi đường quan sát (*)</p></div>
+            <div class="grid-cards" style="justify-content: center;">
+                <div class="info-card"><img src="assets/images/aoquan.png"><div class="card-line1" style="white-space: nowrap;">ÁO QUẦN DÀI</div><div class="card-line3" style="margin-top: 5px;">Che chắn khỏi cây gai,<br>côn trùng đốt</div></div>
+                <div class="info-card"><img src="assets/images/giayvo.png"><div class="card-line1" style="white-space: nowrap;">GIÀY BATA, VỚ CAO</div><div class="card-line3" style="margin-top: 5px;">Tự tin sải bước</div></div>
+                <div class="info-card"><img src="assets/images/sotay.png"><div class="card-line1" style="white-space: nowrap;">SỔ TAY VÀ BÚT</div><div class="card-line3" style="margin-top: 5px;">Ghi chép kiến thức thú vị</div></div>
+                <div class="info-card"><img src="assets/images/balo.png"><div class="card-line1" style="white-space: nowrap;">BALO GỌN NHẸ</div><div class="card-line3" style="margin-top: 5px;">Chứa các vật dụng<br>cá nhân cần thiết</div></div>
+                <div class="info-card"><img src="assets/images/binhnuoc.png"><div class="card-line1" style="white-space: nowrap;">BÌNH NƯỚC</div><div class="card-line3" style="margin-top: 5px;">Tối thiểu 500ml (*)</div></div>
+                <div class="info-card"><img src="assets/images/aomua.png"><div class="card-line1" style="white-space: nowrap;">ÁO MƯA</div><div class="card-line3" style="margin-top: 5px;">Dự phòng mưa bất chợt (*)</div></div>
+                <div class="info-card"><img src="assets/images/headlamp.png"><div class="card-line1" style="white-space: nowrap;">ĐÈN PIN ĐEO ĐẦU</div><div class="card-line3" style="margin-top: 5px;">Soi đường và quan sát (*)</div></div>
             </div>
-            <p style="text-align: center; font-size: 0.9rem;"><i>(*) BTC có dự phòng</i></p>
+            <p style="text-align: center; font-size: 0.9rem; margin-top: 15px;"><i>(*) BTC có dự phòng</i></p>
         </div>
 
-        <!-- TAB 3: ĐĂNG KÝ -->
         <div id="tab-dangky" class="tab-content">
-            <!-- CHỌN ĐỢT (Load động) -->
             <div class="slot-grid" id="slot-container">
                 <div style="text-align:center; width:100%;">Đang tải dữ liệu đợt tham gia... ⏳</div>
             </div>
 
-            <!-- MIỄN TRỪ TRÁCH NHIỆM -->
             <div class="glass-box" style="background: rgba(255,215,0,0.1); border-color: var(--glow-yellow);">
                 <h3 style="color: var(--glow-yellow); margin-top:0;">⚠️ MIỄN TRỪ TRÁCH NHIỆM</h3>
-                <p style="font-size: 0.95rem;">Trong quá trình trải nghiệm, luôn có 3-4 người trong Ban tổ chức đi đầu, giữa và chốt đoàn để đảm bảo an toàn, hướng dẫn quan sát trải nghiệm cho đoàn tránh bị côn trùng, nhện, rắn... cắn (rủi ro rất thấp). Người tham gia đã được thông báo, đồng ý tham gia trip và miễn trừ trách nhiệm...</p>
-                <label style="cursor:pointer; display:flex; gap:10px; font-weight:bold; color: white;">
-                    <input type="checkbox" id="agreeCheckbox" style="transform: scale(1.5);" onchange="toggleForm()">
-                    Tôi đã đọc, hiểu rõ và đồng ý với các nội dung nêu trên.
+                <p style="font-size: 0.95rem; line-height: 1.5;">Trong quá trình trải nghiệm, luôn có 3-4 người trong Ban tổ chức đi đầu, giữa và chốt đoàn để đảm bảo an toàn, hướng dẫn quan sát trải nghiệm cho đoàn tránh bị côn trùng, nhện, rắn... cắn (rủi ro bị cắn rất thấp). Người tham gia đã được thông báo về những rủi ro này, đồng ý tham gia trip và miễn trừ trách nhiệm, miễn bồi thường thiệt hại đối với các cá nhân, đơn vị tổ chức chương trình này nếu có tai nạn, rủi ro xảy ra đối với bản thân, tài sản của người tham gia và của người thân đi cùng.</p>
+                <label style="cursor:pointer; display:flex; align-items:flex-start; gap:10px; font-weight:bold; color: white;">
+                    <input type="checkbox" id="agreeCheckbox" style="width:20px; height:20px; flex-shrink:0; margin-top:3px;" onchange="toggleForm()">
+                    <span>Tôi đã đọc, hiểu rõ và đồng ý với các nội dung miễn trừ trách nhiệm nêu trên.</span>
                 </label>
             </div>
 
-            <!-- FORM CHÍNH -->
             <div id="registrationForm" class="glass-box" style="display: none;">
                 <input type="hidden" id="selectedDot">
                 <input type="hidden" id="selectedDotMax">
@@ -226,7 +246,6 @@
                 <button class="btn-primary" id="btnHold" onclick="holdSlotAndPay()">TIẾP TỤC THANH TOÁN 🚀</button>
             </div>
 
-            <!-- BOX THANH TOÁN (Hiện ra sau khi hold) -->
             <div id="paymentBox" class="payment-box">
                 <h2 style="color: #0F5132; margin-top:0;">⏳ VUI LÒNG HOÀN TẤT TRONG:</h2>
                 <div class="timer" id="countdownTimer">15:00</div>
@@ -245,30 +264,29 @@
             </div>
         </div>
 
-        <!-- TAB 4: TRA CỨU -->
         <div id="tab-tracuu" class="tab-content">
-            <div class="glass-box" style="text-align: center;">
-                <h3 style="color: var(--glow-yellow);">NHẬP SỐ ĐIỆN THOẠI CỦA ANH CHỊ ĐÃ DÙNG ĐĂNG KÝ:</h3>
-                <input type="tel" id="lookupPhone" placeholder="Ví dụ: 0902800318" style="max-width: 300px; margin: 10px auto; display: block; text-align: center;">
-                <button class="btn-primary" style="max-width: 200px;" onclick="lookupBooking()">TRA CỨU <img src="assets/images/kinhlup.png" style="width:20px; vertical-align:middle;"></button>
+            <div class="glass-box">
+                <h3 style="color: var(--glow-yellow); text-align: center; margin-top:0;">NHẬP SỐ ĐIỆN THOẠI CỦA ANH CHỊ ĐÃ DÙNG ĐĂNG KÝ:</h3>
+                <div class="lookup-flex">
+                    <div class="form-group">
+                        <input type="tel" id="lookupPhone" placeholder="Ví dụ: 0902800318">
+                    </div>
+                    <button class="btn-primary" onclick="lookupBooking()">
+                        TRA CỨU <img src="assets/images/kinhlup.png" style="width:24px; vertical-align:middle; margin-left:5px;">
+                    </button>
+                </div>
             </div>
             <div id="lookupResult"></div>
         </div>
-
-        <!-- MODAL ADMIN -->
-        <div id="adminModal" class="glass-box" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: rgba(0,0,0,0.9);">
-            <h3 style="text-align: center;">QUẢN TRỊ ADMIN</h3>
-            <input type="password" id="adminPass" placeholder="Nhập mật khẩu..." style="margin-bottom: 15px;">
-            <button class="btn-primary" onclick="alert('Đang phát triển tính năng Admin!')">ĐĂNG NHẬP</button>
-            <button class="btn-primary" style="background: #333;" onclick="document.getElementById('adminModal').style.display='none'">ĐÓNG</button>
-        </div>
     </div>
 
-    <!-- FOOTER STICKY -->
     <footer class="site-footer">
-        <a href="https://facebook.com/natureandme.vn" target="_blank"><img src="assets/images/FB.png" alt="Facebook"></a>
-        <a href="https://zalo.me/0902800318" target="_blank"><img src="assets/images/call.png" alt="Zalo/Call"></a>
-        <img src="assets/images/admin.png" alt="Admin" onclick="document.getElementById('adminModal').style.display='block'">
+        <div class="footer-content">
+            <span class="footer-text">LIÊN HỆ ĐỂ ĐƯỢC HỖ TRỢ:</span>
+            <a href="https://facebook.com/natureandme.vn" target="_blank"><img src="assets/images/FB.png" alt="Facebook"></a>
+            <a href="https://zalo.me/0902800318" target="_blank"><img src="assets/images/call.png" alt="Zalo/Call"></a>
+            <img src="assets/images/admin.png" alt="Admin" onclick="alert('Đang phát triển tính năng Admin!')">
+        </div>
     </footer>
 
     <script src="script.js"></script>
