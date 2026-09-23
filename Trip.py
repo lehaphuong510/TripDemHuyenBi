@@ -180,7 +180,7 @@ def get_trip_data():
 try:
     trip_options, blocks_info, ws_output = get_trip_data()
 except Exception as e:
-    st.error("Hệ thống đang bận. Vui lòng thử lại!")
+    st.error(f"Lỗi chi tiết: {e}")
     st.stop()
 
 
