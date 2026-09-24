@@ -1,396 +1,193 @@
-const IMGBB_API_KEY = '49ec155703a3d740e971a0c5bb680517';
-let configData = {};
-let currentHoldId = null;
-let timerInterval = null;
+const SHEET_ID = '1Ae7zDMLKD3SSSJePBobjH8O8mUGkyp2bKXq-AyYBdJI';
 
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.main-nav button').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    
-    let btnMap = { 'tab-gioithieu': 0, 'tab-lichtrinh': 1, 'tab-dangky': 2, 'tab-tracuu': 3 };
-    document.querySelectorAll('.main-nav button')[btnMap[tabId]].classList.add('active');
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
 
-function loadYoutube() {
-    const container = document.getElementById('yt-container');
-    container.innerHTML = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/AqoJWlIdqng?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 12px;"></iframe>`;
-}
+  try {
+    const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
 
-// Hàm tải Slot tách riêng để gọi Realtime
-async function loadSlots(isInit = false) {
-    const container = document.getElementById('slot-container');
-    if(isInit) {
-        container.innerHTML = '<div style="text-align:center; width:100%; font-size: 1.2rem;">Đang tải dữ liệu đợt tham gia... ⏳</div>';
-    }
-    
-    try {
-        const res = await fetch('/api/config');
-        configData = await res.json();
-        if (configData.error) throw new Error(configData.error);
+    if (url.pathname === '/api/config' && request.method === 'GET') {
+      const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const dataConfig = await resConfig.json();
+      if(!dataConfig.values || dataConfig.values.length === 0) throw new Error("Chưa nhận được dữ liệu từ tab Config.");
+      
+      const headers = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
+      const idxTenDot = headers.indexOf('Nội dung option');
+      const idxGioiHan = headers.indexOf('SL giới hạn');
+      const idxCost = headers.indexOf('Vé 1 người');
+      const idxSLKM = headers.indexOf('SL khuyến mãi');
+      const idxSchemeKM = headers.indexOf('Scheme khuyến mãi');
+      
+      const parseNumber = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
 
-        if(isInit) {
-            const costVal = Number(configData.fixedCost) || 0;
-            const schemeVal = Number(configData.schemeKhuyenMai) || 0;
-            const discountVal = costVal - schemeVal;
-            document.getElementById('display-cost').innerText = costVal.toLocaleString('vi-VN');
-            document.getElementById('display-slkm').innerText = configData.slKhuyenMai || 0;
-            document.getElementById('display-discount').innerText = discountVal.toLocaleString('vi-VN');
+      const row2 = dataConfig.values[1] || [];
+      const fixedCost = parseNumber(row2[idxCost]);
+      const slKhuyenMai = parseNumber(row2[idxSLKM]);
+      const schemeKhuyenMai = parseNumber(row2[idxSchemeKM]);
+      
+      let options = [];
+
+      const resData = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:G?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const rawData = await resData.json();
+      const dataRows = rawData.values || [];
+      let bookedMap = {};
+      for(let i=1; i<dataRows.length; i++) {
+          let sl = parseInt(dataRows[i][1]) || 0; // Đếm số lượng thực tế từ Data
+          let dot = dataRows[i][6];
+          if(dot) { bookedMap[dot] = (bookedMap[dot] || 0) + sl; }
+      }
+
+      let heldMap = {};
+      try {
+          const listed = await env.TRIP_KV.list();
+          for (const key of listed.keys) {
+              const val = await env.TRIP_KV.get(key.name);
+              if (val) {
+                  const parsed = JSON.parse(val);
+                  heldMap[parsed.dot] = (heldMap[parsed.dot] || 0) + parsed.sl;
+              }
+          }
+      } catch(e) {} 
+
+      for (let i = 1; i < dataConfig.values.length; i++) {
+        let dotName = dataConfig.values[i][idxTenDot];
+        if (dotName && dotName.trim() !== "") {
+            options.push({ name: dotName, limit: parseNumber(dataConfig.values[i][idxGioiHan]), booked: bookedMap[dotName] || 0, held: heldMap[dotName] || 0 });
         }
-
-        container.innerHTML = '';
-        const currentSelected = document.getElementById('selectedDot').value;
-        
-        if (configData.options && configData.options.length > 0) {
-            configData.options.forEach(opt => {
-                const total = parseInt(opt.limit) || 0;
-                const booked = parseInt(opt.booked) || 0;
-                const held = parseInt(opt.held) || 0;
-                const available = Math.max(0, total - booked - held);
-
-                const card = document.createElement('div');
-                card.className = 'slot-card';
-                if(currentSelected === opt.name) {
-                    card.classList.add('selected');
-                    document.getElementById('selectedDotMax').value = available;
-                }
-                card.onclick = () => selectSlot(card, opt.name, available);
-                card.innerHTML = `
-                    <h3>${opt.name}</h3>
-                    <div class="slot-available">Còn ${available} suất</div>
-                    <div class="slot-breakdown">
-                        <span style="display:flex; align-items:center; gap:5px; color:#a5d6a7;"><img src="assets/images/tick.png" style="width:16px;"> Đã ĐK: ${booked}</span>
-                        <span style="display:flex; align-items:center; gap:5px; color:#ffcc80;"><img src="assets/images/donghocat.png" style="width:16px;"> Đang GD: ${held}</span>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        } else {
-            container.innerHTML = '<div style="color:var(--glow-yellow); text-align:center; width:100%; font-size:1.2rem;">Hiện chưa có đợt đăng ký nào.</div>';
-        }
-    } catch (err) {
-        container.innerHTML = `<div style="color:#FFCDD2; text-align:center; width:100%; background:rgba(211,47,47,0.8); padding:15px; border-radius:8px;"><b>Lỗi tải dữ liệu.</b><br>Chi tiết: ${err.message}</div>`;
+      }
+      return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
     }
-}
 
-document.addEventListener("DOMContentLoaded", async () => {
-    await loadSlots(true);
-});
-
-function selectSlot(cardEl, dotName, available) {
-    if (available <= 0) { alert("Rất tiếc, đợt này đã hết suất hoặc đang được giữ!"); return; }
-    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-    cardEl.classList.add('selected');
-    document.getElementById('selectedDot').value = dotName;
-    document.getElementById('selectedDotMax').value = available;
-    const numInput = document.getElementById('numPeople');
-    numInput.max = available;
-    if (parseInt(numInput.value) > available) numInput.value = available;
-    if(document.getElementById('agreeCheckbox').checked) renderParticipants();
-}
-
-function toggleForm() {
-    const isAgreed = document.getElementById('agreeCheckbox').checked;
-    const dot = document.getElementById('selectedDot').value;
-    if (isAgreed && !dot) {
-        alert("Vui lòng chọn đợt tham gia ở phía trên trước!");
-        document.getElementById('agreeCheckbox').checked = false;
-        return;
+    if (url.pathname === '/api/hold' && request.method === 'POST') {
+        const { dot, sl } = await request.json();
+        const holdId = "HOLD-" + Date.now();
+        await env.TRIP_KV.put(holdId, JSON.stringify({ dot, sl }), { expirationTtl: 900 });
+        return new Response(JSON.stringify({ success: true, holdId }), { headers: { 'Content-Type': 'application/json' } });
     }
-    const form = document.getElementById('registrationForm');
-    if (isAgreed) {
-        form.style.display = 'block';
-        renderParticipants();
-    } else {
-        form.style.display = 'none';
+
+    if (url.pathname === '/api/submit' && request.method === 'POST') {
+      const body = await request.json();
+      const timestamp = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+      const bookingId = "BK-" + Math.floor(100000 + Math.random() * 900000);
+      
+      const dataRows = [];
+      body.ds_nguoi.forEach(nguoi => {
+          // Ghi mỗi người 1 dòng. Số lượng (SL) tạm ghi là 1 cho mục đích đếm Count ở các luồng khác nếu muốn.
+          // Hoặc ghi theo body.sl. Code cũ đang lấy body.sl, ta giữ body.sl nhưng lúc tra cứu sẽ đếm (count) row.
+          dataRows.push([timestamp, 1, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
+      });
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
+
+      // YÊU CẦU: BỎ GHI VÀO TAB SHORTLIST
+      // Xóa block code post vào Shortlist!A4:D ở đây.
+
+      if (body.holdId) { await env.TRIP_KV.delete(body.holdId); }
+      return new Response(JSON.stringify({ success: true, bookingId }), { headers: { 'Content-Type': 'application/json' } });
     }
-}
 
-function renderParticipants() {
-    const max = parseInt(document.getElementById('selectedDotMax').value) || 1;
-    let num = parseInt(document.getElementById('numPeople').value) || 1;
-    if (num > max) { num = max; document.getElementById('numPeople').value = max; alert(`Chỉ còn ${max} suất cho đợt này!`); }
-    
-    const container = document.getElementById('participantsList');
-    container.innerHTML = ''; 
-    for(let i = 1; i <= num; i++) {
-        container.innerHTML += `
-            <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 8px; margin-bottom:12px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:8px; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-                    <img src="assets/images/age.png" style="width:20px;"> Người thứ ${i}
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                    <input type="text" id="name_${i}" placeholder="Họ và tên" style="flex:2; min-width:150px;">
-                    <input type="number" id="yob_${i}" placeholder="Năm sinh" style="flex:1; min-width:100px;">
-                </div>
-            </div>
-        `;
+    if (url.pathname === '/api/lookup' && request.method === 'POST') {
+      const { phone } = await request.json();
+      const cleanPhone = phone.trim().replace(/^0+/, '');
+
+      const resData = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const sheetData = await resData.json();
+      const rows = sheetData.values || [];
+      
+      let matched = [];
+      for(let i = 1; i < rows.length; i++) {
+          let rowPhone = (rows[i][4] || "").replace(/^0+/, '').replace(/'/g, '');
+          if(rowPhone === cleanPhone) { matched.push(rows[i]); }
+      }
+      if(matched.length === 0) return new Response(JSON.stringify({ success: false, message: "Hệ thống chưa tìm thấy thông tin đăng ký của SĐT này." }), { headers: { 'Content-Type': 'application/json' } });
+
+      let rawName = matched[0][2] || "Anh/Chị";
+      let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
+
+      // 1. Gộp theo Booking ID từ Tab Data (COUNT số dòng)
+      let bookingsMap = {};
+      matched.forEach(r => {
+          let bId = r[9];
+          if(!bookingsMap[bId]) {
+              bookingsMap[bId] = { bId: bId, dot: r[6], sl: 0, ds_nguoi: [], phoneDisplay: matched[0][4], isChecked: false, money: 0 };
+          }
+          bookingsMap[bId].sl += 1; // COUNT số dòng
+          bookingsMap[bId].ds_nguoi.push({name: r[2], yob: r[3]});
+      });
+
+      // 2. Map trạng thái Thanh toán từ Tab Shortlist
+      const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const shortData = await resShort.json();
+      for(let i = 1; i < (shortData.values || []).length; i++) {
+          let sId = shortData.values[i][0];
+          if(bookingsMap[sId]) {
+              bookingsMap[sId].isChecked = (shortData.values[i][3] === "TRUE");
+              bookingsMap[sId].money = parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
+          }
+      }
+
+      // 3. Tách làm 2 nhóm (Thành công / Chờ đối soát)
+      let paidGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
+      let pendGrp = { bIds: [], totalSl: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
+
+      Object.values(bookingsMap).forEach(b => {
+          let target = b.isChecked ? paidGrp : pendGrp;
+          target.bIds.push(b.bId);
+          target.totalSl += b.sl;
+          if(b.isChecked) target.totalMoney += b.money;
+          target.ds_nguoi.push(...b.ds_nguoi);
+          target.dots.add(b.dot);
+      });
+
+      // Convert Set to Array for JSON serialization
+      paidGrp.dots = Array.from(paidGrp.dots);
+      pendGrp.dots = Array.from(pendGrp.dots);
+
+      // 4. Bốc Zalo Link cho nhóm Paid
+      let zaloLinks = [];
+      if (paidGrp.bIds.length > 0) {
+          const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+          const dataConfig = await resConfig.json();
+          const configHeaders = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
+          const idxTenDot = configHeaders.indexOf('Nội dung option');
+          const idxZalo = configHeaders.indexOf('Link Zalo');
+          
+          if(idxTenDot !== -1 && idxZalo !== -1) {
+              paidGrp.dots.forEach(d => {
+                  for(let r=1; r<dataConfig.values.length; r++) {
+                      if(dataConfig.values[r][idxTenDot] === d && dataConfig.values[r][idxZalo]) {
+                          zaloLinks.push(dataConfig.values[r][idxZalo]);
+                          break;
+                      }
+                  }
+              });
+          }
+      }
+
+      return new Response(JSON.stringify({
+          success: true, firstName, paid: paidGrp, pending: pendGrp, zaloLinks: [...new Set(zaloLinks)]
+      }), { headers: { 'Content-Type': 'application/json' } });
     }
+
+    return new Response("Not Found", { status: 404 });
+  } catch (err) { return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } }); }
 }
 
-async function holdSlotAndPay() {
-    const dot = document.getElementById('selectedDot').value;
-    const phone = document.getElementById('phoneInput').value;
-    const num = parseInt(document.getElementById('numPeople').value);
+async function getGoogleAuthToken(clientEmail, privateKey) {
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const now = Math.floor(Date.now() / 1000);
+  const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
+  const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
+  
+  let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '').replace(/[^A-Za-z0-9+/=]/g, '');     
+  while (base64Key.length % 4 !== 0) { base64Key += '='; }
 
-    let firstParticipant = document.getElementById('name_1').value;
-    if (!firstParticipant || !phone) { alert("Vui lòng nhập đầy đủ Tên người 1 và Số điện thoại!"); return; }
-
-    const btn = document.getElementById('btnHold');
-    btn.innerHTML = "ĐANG GIỮ CHỖ... ⏳"; btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/hold', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dot: dot, sl: num }) });
-        const data = await res.json();
-        
-        if(data.success) {
-            currentHoldId = data.holdId;
-            document.getElementById('registrationForm').style.display = 'none';
-            document.getElementById('paymentBox').style.display = 'block';
-            
-            let totalCost = 0;
-            const costVal = Number(configData.fixedCost) || 0;
-            const schemeVal = Number(configData.schemeKhuyenMai) || 0;
-            const slKhuyenMai = Number(configData.slKhuyenMai) || 999;
-            
-            if (num >= slKhuyenMai) { totalCost = (costVal - schemeVal) * num; } else { totalCost = costVal * num; }
-            document.getElementById('payTotalAmount').innerText = totalCost.toLocaleString('vi-VN') + " VNĐ";
-            
-            let cleanName = firstParticipant.split('-')[0].trim().split(' ').pop().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase();
-            document.getElementById('paySyntax').innerText = `Tripdem ${cleanName} ${phone}`;
-            
-            startCountdown(15 * 60);
-            
-            // Tải lại thẻ để nhảy số Đang Giao Dịch
-            await loadSlots();
-        } else {
-            alert(data.message || "Lỗi giữ chỗ, có thể người khác vừa đăng ký suất cuối cùng!");
-            btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
-        }
-    } catch(err) {
-        alert("Lỗi kết nối mạng!"); btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
-    }
-}
-
-function startCountdown(duration) {
-    let timer = duration, minutes, seconds;
-    const display = document.getElementById('countdownTimer');
-    
-    timerInterval = setInterval(function () {
-        minutes = parseInt(timer / 60, 10);
-        seconds = parseInt(timer % 60, 10);
-        display.textContent = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
-        if (--timer < 0) {
-            clearInterval(timerInterval);
-            alert("Đã hết thời gian chuyển khoản, anh chị chưa đăng ký thành công 😥");
-            window.location.reload();
-        }
-    }, 1000);
-}
-
-async function submitFinalRegistration() {
-    const fileInput = document.getElementById('billUpload');
-    if (fileInput.files.length === 0) { alert("Vui lòng tải lên ảnh Bill thanh toán!"); return; }
-
-    const btnSubmit = document.getElementById('btnSubmitFinal');
-    btnSubmit.disabled = true; btnSubmit.innerHTML = "ĐANG TẢI ẢNH LÊN... ⏳";
-
-    try {
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
-        const imgbbData = await imgbbRes.json();
-        
-        if (imgbbData.success) {
-            btnSubmit.innerHTML = "ĐANG LƯU DỮ LIỆU... 🚀";
-            const num = parseInt(document.getElementById('numPeople').value);
-            let ds_nguoi = [];
-            for(let i=1; i<=num; i++) {
-                ds_nguoi.push({ name: document.getElementById(`name_${i}`).value, yob: document.getElementById(`yob_${i}`).value });
-            }
-            
-            let totalCost = 0;
-            const costVal = Number(configData.fixedCost) || 0;
-            const schemeVal = Number(configData.schemeKhuyenMai) || 0;
-            const slKhuyenMai = Number(configData.slKhuyenMai) || 999;
-            if (num >= slKhuyenMai) { totalCost = (costVal - schemeVal) * num; } else { totalCost = costVal * num; }
-
-            const payload = {
-                dot_tham_gia: document.getElementById('selectedDot').value,
-                sl: num,
-                ds_nguoi: ds_nguoi,
-                phone: document.getElementById('phoneInput').value,
-                phone_backup: document.getElementById('phoneBackup').value,
-                bill_url: imgbbData.data.url,
-                totalMoney: totalCost,
-                holdId: currentHoldId
-            };
-
-            const submitRes = await fetch('/api/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            const submitData = await submitRes.json();
-
-            if (submitData.success) {
-                clearInterval(timerInterval);
-                document.getElementById('paymentBox').style.display = 'none';
-                
-                let successBox = document.getElementById('submitSuccessBox');
-                successBox.style.display = 'block';
-                document.getElementById('successBookingId').innerText = submitData.bookingId;
-                
-                // Trượt lên Box Thành Công
-                successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                // Gọi bướm bay ra từ tâm màn hình bằng code JS thuần (ko xài var() CSS nữa)
-                createButterflies(); 
-                
-                // Tải lại thẻ để nhảy số Đã Đăng Ký
-                await loadSlots();
-            }
-        } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
-    } catch (err) { alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
-}
-
-// Nút Đăng Ký Đợt Khác (Reset Form)
-function resetRegistrationForm() {
-    document.getElementById('submitSuccessBox').style.display = 'none';
-    document.getElementById('registrationForm').style.display = 'none';
-    document.getElementById('agreeCheckbox').checked = false;
-    
-    document.getElementById('numPeople').value = 1;
-    document.getElementById('phoneInput').value = '';
-    document.getElementById('phoneBackup').value = '';
-    document.getElementById('billUpload').value = '';
-    document.getElementById('participantsList').innerHTML = '';
-    
-    document.getElementById('selectedDot').value = '';
-    document.getElementById('selectedDotMax').value = '';
-    
-    const btnHold = document.getElementById('btnHold');
-    btnHold.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; 
-    btnHold.disabled = false;
-    
-    const btnSubmit = document.getElementById('btnSubmitFinal');
-    btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; 
-    btnSubmit.disabled = false;
-    
-    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-    
-    loadSlots();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-async function lookupBooking() {
-    const phone = document.getElementById('lookupPhone').value;
-    const resultDiv = document.getElementById('lookupResult');
-    if(!phone) { alert("Vui lòng nhập SĐT!"); return; }
-    
-    resultDiv.innerHTML = "<div class='glass-box' style='text-align:center;'><i>Đang tìm kiếm... ⏳</i></div>";
-    
-    try {
-        const res = await fetch('/api/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) });
-        const data = await res.json();
-        
-        if (!data.success) { resultDiv.innerHTML = `<div class="glass-box" style="color:var(--glow-yellow); border-color:#f44336; text-align:center;">${data.message}</div>`; return; }
-
-        let dsHtml = `<table class="result-table"><tr><th style="text-align:left;">HỌ VÀ TÊN</th><th style="text-align:center;">NĂM SINH</th></tr>`;
-        data.ds_nguoi.forEach(ng => { dsHtml += `<tr><td style="text-align:left;"><b>${ng.name}</b></td><td style="text-align:center;">${ng.yob}</td></tr>`; });
-        dsHtml += `</table>`;
-
-        let statusHtml = "";
-        let zaloHtml = "";
-
-        if (!data.isChecked) {
-            statusHtml = `
-                <div style="text-align:center; padding-bottom:15px; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.2);">
-                    <h3 style="color:var(--glow-yellow); margin-top:0; font-size: 1.5rem;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
-                    <p style="font-size: 1.1rem; margin:0;">Hệ thống đã nhận được đăng ký của anh/chị <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu tài khoản và cập nhật trạng thái nha.</p>
-                </div>
-            `;
-        } else {
-            statusHtml = `
-                <div style="text-align:center; padding-bottom:15px; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.2);">
-                    <h3 style="color:var(--glow-cyan); margin-top:0; font-size: 1.5rem;">
-                        <img src="assets/images/tick.png" style="width:24px; vertical-align:middle; margin-right:5px;"> CHỐT ĐƠN THÀNH CÔNG
-                    </h3>
-                    <p style="font-size: 1.1rem; margin:0;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
-                </div>
-                <div style="background:rgba(25,135,84,0.3); padding:15px; border-radius:8px; border:1px solid #198754; margin-bottom:15px; display:flex; flex-direction:column; align-items:center; gap:5px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <img src="assets/images/tick.png" style="width:20px;"> 
-                        <span>BTC đã nhận được thanh toán:</span>
-                    </div>
-                    <div>Tổng số tiền đã nhận: <span style="color:var(--glow-yellow); font-weight:900; font-size:1.2rem;">${data.totalMoney ? data.totalMoney.toLocaleString('vi-VN') : 0} VNĐ</span></div>
-                </div>
-            `;
-            if (data.zaloLink) {
-                zaloHtml = `
-                    <div class="zalo-banner">
-                        🚨 QUAN TRỌNG: ANH CHỊ NHỚ VÀO GROUP ZALO ĐỂ TIỆN THEO DÕI THÔNG BÁO NHA! 🚨<br>
-                        <a href="${data.zaloLink}" target="_blank">👉 BẤM VÀO ĐÂY ĐỂ THAM GIA GROUP 👈</a>
-                    </div>
-                `;
-            }
-            createFireflies();
-        }
-
-        resultDiv.innerHTML = `
-            <div class="glass-box" style="text-align:center;">
-                ${statusHtml}
-                <div style="text-align:left; background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-top:10px; border: 1px solid var(--glass-border);">
-                    <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:15px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
-                    <div style="margin-bottom:5px;">Đợt tham gia: <b style="color:var(--text-main); font-size:1.1rem;">${data.dot}</b></div>
-                    <div style="margin-bottom:5px;">SĐT người đại diện: <b style="color:var(--text-main); font-size:1.1rem;">${data.phoneDisplay}</b></div>
-                    <div style="margin-bottom:15px;">Tổng số lượng: <b style="color:var(--glow-yellow); font-size:1.1rem;">${data.sl} người</b></div>
-                    ${dsHtml}
-                </div>
-                ${zaloHtml}
-            </div>
-        `;
-    } catch (err) { resultDiv.innerHTML = `<div class="glass-box" style="color:red; text-align:center;">Lỗi kết nối máy chủ.</div>`; }
-}
-
-// Bướm nổ ra từ giữa màn hình (Fix tương thích mọi trình duyệt)
-function createButterflies() {
-    for (let i = 0; i < 30; i++) {
-        let b = document.createElement("img");
-        b.src = "assets/images/butterfly.png";
-        b.style.position = "fixed";
-        b.style.width = "30px";
-        b.style.zIndex = "9999";
-        b.style.pointerEvents = "none";
-        
-        // Đặt bướm ở giữa màn hình nhưng ẩn đi (scale 0)
-        b.style.left = "50vw";
-        b.style.top = "50vh";
-        b.style.transform = "translate(-50%, -50%) scale(0)";
-        b.style.transition = `all ${Math.random() * 2 + 2}s cubic-bezier(0.25, 1, 0.5, 1)`;
-        
-        document.body.appendChild(b);
-
-        // Kích hoạt nổ ra các hướng
-        setTimeout(() => {
-            let dx = (Math.random() * 200 - 100) + "vw";
-            let dy = (Math.random() * 200 - 100) + "vh";
-            b.style.transform = `translate(${dx}, ${dy}) scale(1.5) rotate(${Math.random() * 360}deg)`;
-            b.style.opacity = "0";
-        }, 50);
-
-        setTimeout(() => b.remove(), 5000);
-    }
-}
-
-function createFireflies() {
-    for (let i = 0; i < 30; i++) {
-        let f = document.createElement("div");
-        f.className = "anim-firefly";
-        f.style.left = Math.random() * 100 + "vw";
-        f.style.top = Math.random() * 100 + "vh";
-        f.style.setProperty('--dx', (Math.random() - 0.5) * 2);
-        f.style.setProperty('--dy', Math.random() + 0.5);
-        f.style.animationDuration = (Math.random() * 3 + 2) + "s";
-        document.body.appendChild(f);
-        setTimeout(() => f.remove(), 6000);
-    }
+  const binaryDer = new Uint8Array(atob(base64Key).length);
+  for (let i = 0; i < atob(base64Key).length; i++) binaryDer[i] = atob(base64Key).charCodeAt(i);
+  const key = await crypto.subtle.importKey("pkcs8", binaryDer.buffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(signatureInput));
+  const jwt = `${signatureInput}.${btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
+  const res = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}` });
+  const data = await res.json();
+  return data.access_token;
 }
