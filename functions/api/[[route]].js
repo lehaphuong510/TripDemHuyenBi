@@ -132,11 +132,17 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  // FIX ATOB BẰNG WHITELIST: Lọc bỏ toàn bộ chữ rác, -, \n, \r, khoảng trắng. Chỉ giữ chữ cái, số, +, /, =
-  let base64Key = privateKey.replace(/-----.*?-----/g, ''); 
+  // FIX ATOB TRIỆT ĐỂ BẰNG WHITELIST VÀ PADDING
+  let base64Key = privateKey;
+  // Xóa thủ công ký tự newline ẩn (\n) có thể copy dính từ Cloudflare dashboard
+  base64Key = base64Key.replace(/\\n/g, ''); 
+  base64Key = base64Key.replace(/\\r/g, ''); 
+  // Loại bỏ các tag BEGIN/END
+  base64Key = base64Key.replace(/-----.*?-----/g, ''); 
+  // Lọc chỉ giữ lại ký tự base64 hợp lệ
   base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
   
-  // Bù dấu '=' cho đến khi độ dài chia hết cho 4
+  // Padding bắt buộc cho Base64 (chuẩn độ dài % 4 == 0)
   while (base64Key.length % 4 !== 0) {
       base64Key += '=';                                      
   }
