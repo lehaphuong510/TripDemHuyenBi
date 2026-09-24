@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         const res = await fetch('/api/config');
         configData = await res.json();
-        
         if (configData.error) throw new Error(configData.error);
 
         const costVal = Number(configData.fixedCost) || 0;
@@ -51,8 +50,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <h3>${opt.name}</h3>
                     <div class="slot-available">Còn ${available} suất</div>
                     <div class="slot-breakdown">
-                        <span style="color:#a5d6a7;">✅ Đã ĐK: ${booked}</span>
-                        <span style="color:#ffcc80;">⏳ Đang thanh toán: ${held}</span>
+                        <span style="display:flex; align-items:center; gap:5px; color:#a5d6a7;"><img src="assets/images/tick.png" style="width:16px;"> Đã ĐK: ${booked}</span>
+                        <span style="display:flex; align-items:center; gap:5px; color:#ffcc80;"><img src="assets/images/cost.png" style="width:16px; filter:invert(1);"> Đang GD: ${held}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -67,30 +66,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function selectSlot(cardEl, dotName, available) {
     if (available <= 0) { alert("Rất tiếc, đợt này đã hết suất hoặc đang được giữ!"); return; }
-    
     document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
     cardEl.classList.add('selected');
-    
     document.getElementById('selectedDot').value = dotName;
     document.getElementById('selectedDotMax').value = available;
-    
     const numInput = document.getElementById('numPeople');
     numInput.max = available;
     if (parseInt(numInput.value) > available) numInput.value = available;
-    
     if(document.getElementById('agreeCheckbox').checked) renderParticipants();
 }
 
 function toggleForm() {
     const isAgreed = document.getElementById('agreeCheckbox').checked;
     const dot = document.getElementById('selectedDot').value;
-    
     if (isAgreed && !dot) {
         alert("Vui lòng chọn đợt tham gia ở phía trên trước!");
         document.getElementById('agreeCheckbox').checked = false;
         return;
     }
-    
     const form = document.getElementById('registrationForm');
     if (isAgreed) {
         form.style.display = 'block';
@@ -110,7 +103,9 @@ function renderParticipants() {
     for(let i = 1; i <= num; i++) {
         container.innerHTML += `
             <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 8px; margin-bottom:12px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:8px; font-size:1.1rem;">👤 Người thứ ${i}</div>
+                <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:8px; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                    <img src="assets/images/age.png" style="width:20px;"> Người thứ ${i}
+                </div>
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
                     <input type="text" id="name_${i}" placeholder="Họ và tên" style="flex:2; min-width:150px;">
                     <input type="number" id="yob_${i}" placeholder="Năm sinh" style="flex:1; min-width:100px;">
@@ -220,9 +215,10 @@ async function submitFinalRegistration() {
 
             if (submitData.success) {
                 clearInterval(timerInterval);
-                document.getElementById('countdownTimer').style.display = 'none';
-                document.getElementById('submitStatus').innerHTML = `🎉 GHI NHẬN THÀNH CÔNG! Mã Booking: <b>${submitData.bookingId}</b>`;
-                btnSubmit.style.display = 'none';
+                document.getElementById('paymentBox').style.display = 'none'; // Ẩn box thanh toán
+                document.getElementById('submitSuccessBox').style.display = 'block'; // Hiện box success
+                document.getElementById('successBookingId').innerText = submitData.bookingId;
+                createButterflies(); // Thả bướm
             }
         } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
     } catch (err) { alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
@@ -241,29 +237,55 @@ async function lookupBooking() {
         
         if (!data.success) { resultDiv.innerHTML = `<div class="glass-box" style="color:var(--glow-yellow); border-color:#f44336; text-align:center;">${data.message}</div>`; return; }
 
-        let dsHtml = `<div style="text-align:left; font-size: 1.05rem; margin-top:10px;">`;
-        data.ds_nguoi.forEach(ng => { dsHtml += `• ${ng.name} (${ng.yob})<br>`; });
-        dsHtml += `</div>`;
+        let dsHtml = `<table class="result-table"><tr><th>Họ và Tên</th><th>Năm sinh</th></tr>`;
+        data.ds_nguoi.forEach(ng => { dsHtml += `<tr><td><b>${ng.name}</b></td><td style="text-align:center;">${ng.yob}</td></tr>`; });
+        dsHtml += `</table>`;
 
         let statusHtml = "";
+        let zaloHtml = "";
+
         if (!data.isChecked) {
-            statusHtml = `<div class="glass-box" style="background: rgba(255,235,59,0.2); border-color:#FBC02D; text-align:center;">
-                <h3 style="color:#FFC107; margin-top:0; font-size: 1.5rem;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
-                <p style="margin-bottom:0; font-size: 1.1rem; text-align:center;">Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
-            </div>`;
+            statusHtml = `
+                <div style="text-align:center; padding-bottom:15px; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.2);">
+                    <h3 style="color:var(--glow-yellow); margin-top:0; font-size: 1.5rem;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
+                    <p style="font-size: 1.1rem; margin:0;">Hệ thống đã nhận được đăng ký của anh/chị <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu tài khoản và cập nhật trạng thái nha.</p>
+                </div>
+            `;
         } else {
-            statusHtml = `<div class="glass-box" style="background: rgba(76,175,80,0.2); border-color:#4CAF50; text-align:center;">
-                <h3 style="color:#4CAF50; margin-top:0; font-size: 1.5rem;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
-                <p style="font-size: 1.1rem; text-align:center;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
-            </div>`;
-            createButterflies();
+            statusHtml = `
+                <div style="text-align:center; padding-bottom:15px; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.2);">
+                    <h3 style="color:var(--glow-cyan); margin-top:0; font-size: 1.5rem;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
+                    <p style="font-size: 1.1rem; margin:0;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
+                </div>
+                <div style="background:rgba(25,135,84,0.3); padding:10px; border-radius:8px; border:1px solid #198754; margin-bottom:15px;">
+                    ✅ BTC đã nhận được thanh toán:<br>
+                    Tổng số tiền đã nhận: <span style="color:var(--glow-yellow); font-weight:900; font-size:1.2rem;">${data.totalMoney ? data.totalMoney.toLocaleString('vi-VN') : 0} VNĐ</span>
+                </div>
+            `;
+            if (data.zaloLink) {
+                zaloHtml = `
+                    <div class="zalo-banner">
+                        🚨 QUAN TRỌNG: ANH CHỊ NHỚ VÀO GROUP ZALO ĐỂ TIỆN THEO DÕI THÔNG BÁO NHA! 🚨<br>
+                        <a href="${data.zaloLink}" target="_blank">👉 BẤM VÀO ĐÂY ĐỂ THAM GIA GROUP 👈</a>
+                    </div>
+                `;
+            }
+            createFireflies();
         }
 
-        resultDiv.innerHTML = statusHtml + `<div class="glass-box" style="background:rgba(0,0,0,0.3);">
-            <b style="color: var(--glow-yellow); text-transform: uppercase; font-size: 1.2rem;">THÔNG TIN ĐĂNG KÝ:</b><br><br>
-            Mã Đơn: <b>${data.bookingId}</b><br>Đợt: ${data.dot}<br>SĐT Đại diện: ${data.phoneDisplay}<br>Số lượng: ${data.sl} người
-            ${dsHtml}
-        </div>`;
+        resultDiv.innerHTML = `
+            <div class="glass-box" style="text-align:center;">
+                ${statusHtml}
+                <div style="text-align:left; background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-top:10px;">
+                    <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:10px;">THÔNG TIN ĐĂNG KÝ:</b>
+                    Đợt tham gia: <b style="color:white;">${data.dot}</b><br>
+                    SĐT người đại diện: <b style="color:white;">${data.phoneDisplay}</b><br>
+                    Tổng số lượng: <b style="color:white;">${data.sl} người</b>
+                    ${dsHtml}
+                </div>
+                ${zaloHtml}
+            </div>
+        `;
     } catch (err) { resultDiv.innerHTML = `<div class="glass-box" style="color:red; text-align:center;">Lỗi kết nối máy chủ.</div>`; }
 }
 
@@ -277,5 +299,19 @@ function createButterflies() {
         b.style.animationDelay = (Math.random() * 1.5) + "s";
         document.body.appendChild(b);
         setTimeout(() => b.remove(), 7000);
+    }
+}
+
+function createFireflies() {
+    for (let i = 0; i < 30; i++) {
+        let f = document.createElement("div");
+        f.className = "anim-firefly";
+        f.style.left = Math.random() * 100 + "vw";
+        f.style.top = Math.random() * 100 + "vh";
+        f.style.setProperty('--dx', (Math.random() - 0.5) * 2);
+        f.style.setProperty('--dy', Math.random() + 0.5);
+        f.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        document.body.appendChild(f);
+        setTimeout(() => f.remove(), 6000);
     }
 }
