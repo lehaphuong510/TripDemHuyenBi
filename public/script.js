@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
         const res = await fetch('/api/config');
         configData = await res.json();
+        
         if (configData.error) throw new Error(configData.error);
 
         const costVal = Number(configData.fixedCost) || 0;
@@ -51,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <div class="slot-available">Còn ${available} suất</div>
                     <div class="slot-breakdown">
                         <span style="display:flex; align-items:center; gap:5px; color:#a5d6a7;"><img src="assets/images/tick.png" style="width:16px;"> Đã ĐK: ${booked}</span>
-                        <span style="display:flex; align-items:center; gap:5px; color:#ffcc80;"><img src="assets/images/cost.png" style="width:16px; filter:invert(1);"> Đang GD: ${held}</span>
+                        <span style="display:flex; align-items:center; gap:5px; color:#ffcc80;"><img src="assets/images/donghocat.png" style="width:16px;"> Đang GD: ${held}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -215,10 +216,10 @@ async function submitFinalRegistration() {
 
             if (submitData.success) {
                 clearInterval(timerInterval);
-                document.getElementById('paymentBox').style.display = 'none'; // Ẩn box thanh toán
-                document.getElementById('submitSuccessBox').style.display = 'block'; // Hiện box success
+                document.getElementById('paymentBox').style.display = 'none';
+                document.getElementById('submitSuccessBox').style.display = 'block';
                 document.getElementById('successBookingId').innerText = submitData.bookingId;
-                createButterflies(); // Thả bướm
+                createButterflies(); 
             }
         } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
     } catch (err) { alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
@@ -277,7 +278,7 @@ async function lookupBooking() {
             <div class="glass-box" style="text-align:center;">
                 ${statusHtml}
                 <div style="text-align:left; background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-top:10px;">
-                    <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:10px;">THÔNG TIN ĐĂNG KÝ:</b>
+                    <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:10px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
                     Đợt tham gia: <b style="color:white;">${data.dot}</b><br>
                     SĐT người đại diện: <b style="color:white;">${data.phoneDisplay}</b><br>
                     Tổng số lượng: <b style="color:white;">${data.sl} người</b>
