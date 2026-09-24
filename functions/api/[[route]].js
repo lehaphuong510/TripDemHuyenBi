@@ -10,22 +10,16 @@ export async function onRequest(context) {
     if (url.pathname === '/api/config' && request.method === 'GET') {
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
-      if(!dataConfig.values || dataConfig.values.length === 0) throw new Error("Chưa nhận được dữ liệu từ tab Config. Vui lòng kiểm tra lại cấu trúc Google Sheet.");
+      if(!dataConfig.values || dataConfig.values.length === 0) throw new Error("Chưa nhận được dữ liệu từ tab Config.");
       
       const headers = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
-      
       const idxTenDot = headers.indexOf('Nội dung option');
       const idxGioiHan = headers.indexOf('SL giới hạn');
       const idxCost = headers.indexOf('Vé 1 người');
       const idxSLKM = headers.indexOf('SL khuyến mãi');
       const idxSchemeKM = headers.indexOf('Scheme khuyến mãi');
       
-      if(idxTenDot === -1 || idxGioiHan === -1) throw new Error("Không tìm thấy cột 'Nội dung option' hoặc 'SL giới hạn'. Hãy kiểm tra chính tả dòng 1 tab Config.");
-
-      const parseNumber = (val) => {
-          if (!val) return 0;
-          return parseInt(String(val).replace(/[^\d]/g, '')) || 0;
-      };
+      const parseNumber = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
 
       const row2 = dataConfig.values[1] || [];
       const fixedCost = parseNumber(row2[idxCost]);
@@ -39,7 +33,7 @@ export async function onRequest(context) {
       const dataRows = rawData.values || [];
       let bookedMap = {};
       for(let i=1; i<dataRows.length; i++) {
-          let sl = parseInt(dataRows[i][1]) || 0;
+          let sl = parseInt(dataRows[i][1]) || 0; // Đếm số lượng thực tế từ Data
           let dot = dataRows[i][6];
           if(dot) { bookedMap[dot] = (bookedMap[dot] || 0) + sl; }
       }
@@ -79,13 +73,14 @@ export async function onRequest(context) {
       
       const dataRows = [];
       body.ds_nguoi.forEach(nguoi => {
-          dataRows.push([timestamp, body.sl, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
+          // Ghi mỗi người 1 dòng. Số lượng (SL) tạm ghi là 1 cho mục đích đếm Count ở các luồng khác nếu muốn.
+          // Hoặc ghi theo body.sl. Code cũ đang lấy body.sl, ta giữ body.sl nhưng lúc tra cứu sẽ đếm (count) row.
+          dataRows.push([timestamp, 1, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
       });
-      // Đã gắn INSERT_ROWS để 100% không đè dòng data
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
 
-      const shortlistRow = [[bookingId, body.sl, body.totalMoney, "FALSE"]];
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: shortlistRow }) });
+      // YÊU CẦU: BỎ GHI VÀO TAB SHORTLIST
+      // Xóa block code post vào Shortlist!A4:D ở đây.
 
       if (body.holdId) { await env.TRIP_KV.delete(body.holdId); }
       return new Response(JSON.stringify({ success: true, bookingId }), { headers: { 'Content-Type': 'application/json' } });
@@ -106,53 +101,71 @@ export async function onRequest(context) {
       }
       if(matched.length === 0) return new Response(JSON.stringify({ success: false, message: "Hệ thống chưa tìm thấy thông tin đăng ký của SĐT này." }), { headers: { 'Content-Type': 'application/json' } });
 
-      let bookingIds = [...new Set(matched.map(m => m[9]))];
-      let displayBookingId = bookingIds.join(", "); 
-      let matchedDot = matched[0][6];
-      
-      // Tính gộp SĐT (Cộng dồn SL và lấy full danh sách)
-      let totalSl = 0;
-      let ds_nguoi = [];
-      matched.forEach(m => {
-          totalSl += parseInt(m[1]) || 0;
-          ds_nguoi.push({ name: m[2], yob: m[3] });
-      });
-
-      const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
-      const shortData = await resShort.json();
-      
-      let isChecked = false;
-      let totalMoneyReceived = 0;
-      for(let i = 1; i < (shortData.values || []).length; i++) {
-          let sId = shortData.values[i][0];
-          if(bookingIds.includes(sId)) {
-              if(shortData.values[i][3] === "TRUE") { 
-                  isChecked = true; 
-                  totalMoneyReceived += parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
-              }
-          }
-      }
-
-      const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
-      const dataConfig = await resConfig.json();
-      const configHeaders = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
-      const idxTenDot = configHeaders.indexOf('Nội dung option');
-      const idxZalo = configHeaders.indexOf('Link Zalo');
-      let zaloLink = "";
-      if(idxTenDot !== -1 && idxZalo !== -1) {
-          for(let r=1; r<dataConfig.values.length; r++) {
-              if(dataConfig.values[r][idxTenDot] === matchedDot) {
-                  zaloLink = dataConfig.values[r][idxZalo] || "";
-                  break;
-              }
-          }
-      }
-
       let rawName = matched[0][2] || "Anh/Chị";
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
 
+      // 1. Gộp theo Booking ID từ Tab Data (COUNT số dòng)
+      let bookingsMap = {};
+      matched.forEach(r => {
+          let bId = r[9];
+          if(!bookingsMap[bId]) {
+              bookingsMap[bId] = { bId: bId, dot: r[6], sl: 0, ds_nguoi: [], phoneDisplay: matched[0][4], isChecked: false, money: 0 };
+          }
+          bookingsMap[bId].sl += 1; // COUNT số dòng
+          bookingsMap[bId].ds_nguoi.push({name: r[2], yob: r[3]});
+      });
+
+      // 2. Map trạng thái Thanh toán từ Tab Shortlist
+      const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const shortData = await resShort.json();
+      for(let i = 1; i < (shortData.values || []).length; i++) {
+          let sId = shortData.values[i][0];
+          if(bookingsMap[sId]) {
+              bookingsMap[sId].isChecked = (shortData.values[i][3] === "TRUE");
+              bookingsMap[sId].money = parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
+          }
+      }
+
+      // 3. Tách làm 2 nhóm (Thành công / Chờ đối soát)
+      let paidGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
+      let pendGrp = { bIds: [], totalSl: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
+
+      Object.values(bookingsMap).forEach(b => {
+          let target = b.isChecked ? paidGrp : pendGrp;
+          target.bIds.push(b.bId);
+          target.totalSl += b.sl;
+          if(b.isChecked) target.totalMoney += b.money;
+          target.ds_nguoi.push(...b.ds_nguoi);
+          target.dots.add(b.dot);
+      });
+
+      // Convert Set to Array for JSON serialization
+      paidGrp.dots = Array.from(paidGrp.dots);
+      pendGrp.dots = Array.from(pendGrp.dots);
+
+      // 4. Bốc Zalo Link cho nhóm Paid
+      let zaloLinks = [];
+      if (paidGrp.bIds.length > 0) {
+          const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+          const dataConfig = await resConfig.json();
+          const configHeaders = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
+          const idxTenDot = configHeaders.indexOf('Nội dung option');
+          const idxZalo = configHeaders.indexOf('Link Zalo');
+          
+          if(idxTenDot !== -1 && idxZalo !== -1) {
+              paidGrp.dots.forEach(d => {
+                  for(let r=1; r<dataConfig.values.length; r++) {
+                      if(dataConfig.values[r][idxTenDot] === d && dataConfig.values[r][idxZalo]) {
+                          zaloLinks.push(dataConfig.values[r][idxZalo]);
+                          break;
+                      }
+                  }
+              });
+          }
+      }
+
       return new Response(JSON.stringify({
-          success: true, bookingId: displayBookingId, firstName, dot: matchedDot, sl: totalSl, phoneDisplay: matched[0][4], isChecked, totalMoney: totalMoneyReceived, zaloLink, ds_nguoi
+          success: true, firstName, paid: paidGrp, pending: pendGrp, zaloLinks: [...new Set(zaloLinks)]
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -166,10 +179,7 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  // FIX ĐỨT ĐIỂM BASE64 (Lọc sạch bóng mọi text rác, \n, \r)
-  let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '');
-  base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
-  
+  let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '').replace(/[^A-Za-z0-9+/=]/g, '');     
   while (base64Key.length % 4 !== 0) { base64Key += '='; }
 
   const binaryDer = new Uint8Array(atob(base64Key).length);
