@@ -106,11 +106,35 @@ export async function onRequest(context) {
       if(matched.length === 0) return new Response(JSON.stringify({ success: false, message: "Hệ thống chưa tìm thấy thông tin đăng ký của SĐT này." }), { headers: { 'Content-Type': 'application/json' } });
 
       let bookingId = matched[0][9];
+      let matchedDot = matched[0][6];
+      
+      // Bốc dữ liệu Shortlist
       const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const shortData = await resShort.json();
       let isChecked = false;
+      let totalMoney = 0;
       for(let i = 1; i < (shortData.values || []).length; i++) {
-          if(shortData.values[i][0] === bookingId && shortData.values[i][3] === "TRUE") { isChecked = true; break; }
+          if(shortData.values[i][0] === bookingId) {
+              totalMoney = parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
+              if(shortData.values[i][3] === "TRUE") isChecked = true; 
+              break; 
+          }
+      }
+
+      // Bốc Zalo Link từ Config
+      const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const dataConfig = await resConfig.json();
+      const configHeaders = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
+      const idxTenDot = configHeaders.indexOf('Nội dung option');
+      const idxZalo = configHeaders.indexOf('Link Zalo');
+      let zaloLink = "";
+      if(idxTenDot !== -1 && idxZalo !== -1) {
+          for(let r=1; r<dataConfig.values.length; r++) {
+              if(dataConfig.values[r][idxTenDot] === matchedDot) {
+                  zaloLink = dataConfig.values[r][idxZalo] || "";
+                  break;
+              }
+          }
       }
 
       let rawName = matched[0][2] || "Anh/Chị";
@@ -118,7 +142,7 @@ export async function onRequest(context) {
       let ds_nguoi = matched.map(r => ({ name: r[2], yob: r[3] }));
 
       return new Response(JSON.stringify({
-          success: true, bookingId, firstName, dot: matched[0][6], sl: matched[0][1], phoneDisplay: matched[0][4], isChecked, ds_nguoi
+          success: true, bookingId, firstName, dot: matchedDot, sl: matched[0][1], phoneDisplay: matched[0][4], isChecked, totalMoney, zaloLink, ds_nguoi
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -132,20 +156,8 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  // FIX ATOB TRIỆT ĐỂ BẰNG WHITELIST VÀ PADDING
-  let base64Key = privateKey;
-  // Xóa thủ công ký tự newline ẩn (\n) có thể copy dính từ Cloudflare dashboard
-  base64Key = base64Key.replace(/\\n/g, ''); 
-  base64Key = base64Key.replace(/\\r/g, ''); 
-  // Loại bỏ các tag BEGIN/END
-  base64Key = base64Key.replace(/-----.*?-----/g, ''); 
-  // Lọc chỉ giữ lại ký tự base64 hợp lệ
-  base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
-  
-  // Padding bắt buộc cho Base64 (chuẩn độ dài % 4 == 0)
-  while (base64Key.length % 4 !== 0) {
-      base64Key += '=';                                      
-  }
+  let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '').replace(/[^A-Za-z0-9+/=]/g, '');     
+  while (base64Key.length % 4 !== 0) { base64Key += '='; }
 
   const binaryDer = new Uint8Array(atob(base64Key).length);
   for (let i = 0; i < atob(base64Key).length; i++) binaryDer[i] = atob(base64Key).charCodeAt(i);
