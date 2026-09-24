@@ -40,7 +40,7 @@
         .header-logo img.logo { height: 50px; }
         .header-logo img.title { width: 50%; min-width: 280px; margin-top: 10px; filter: drop-shadow(0 -10px 40px rgba(255,215,0,0.9)) drop-shadow(0 0 20px rgba(255,215,0,0.6)); }
 
-        /* MENU BAR */
+        /* MENU BAR STICKY */
         .main-nav-wrapper { position: sticky; top: 10px; z-index: 100; margin-bottom: 20px; }
         .main-nav { 
             display: flex; justify-content: center; gap: 8px;
@@ -56,18 +56,17 @@
         .main-nav button:hover, .main-nav button.active { color: var(--glow-yellow); text-shadow: 0 0 10px var(--glow-yellow); font-weight: 900; }
         
         .btn-pulse-cyan { color: var(--glow-cyan) !important; animation: cyanPulse 0.7s infinite alternate; }
-        @keyframes cyanPulse { 
-            0% { text-shadow: 0 0 5px rgba(0,255,255,0.4); } 
-            100% { text-shadow: 0 0 15px var(--glow-cyan), 0 0 5px var(--glow-cyan); } 
-        }
+        @keyframes cyanPulse { 0% { text-shadow: 0 0 5px rgba(0,255,255,0.4); } 100% { text-shadow: 0 0 15px var(--glow-cyan), 0 0 5px var(--glow-cyan); } }
         .btn-pulse-cyan img { width: 28px; filter: drop-shadow(0 0 8px var(--glow-cyan)); margin-left: 5px; }
 
         .mobile-br { display: none; }
+        .inline-flex { display: inline-flex; align-items: center; } /* Bọc KÝ và BƯỚM */
+        
         @media (max-width: 640px) { 
             .main-nav { display: flex; flex-wrap: nowrap; border-radius: 16px; gap: 2px; padding: 6px; }
-            .main-nav button { font-size: 0.8rem; padding: 8px 2px; flex-direction: column; line-height: 1.2; }
+            .main-nav button { font-size: 0.8rem; padding: 8px 2px; flex-direction: column; line-height: 1.2; justify-content: center; }
             .mobile-br { display: block; }
-            .btn-pulse-cyan img { width: 20px; margin-left: 0; margin-top: 2px; }
+            .btn-pulse-cyan img { width: 20px; margin-left: 3px; }
         }
 
         .tab-content { display: none; animation: fadeIn 0.4s; }
@@ -78,17 +77,18 @@
         .glass-box p { text-align: justify; }
         h2.section-title { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); text-transform: uppercase; text-align: center; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-bottom: 10px; margin-top: 0; font-size: 1.5rem; }
 
-        /* GRID CARDS (Đã fix line 2 và margin) */
+        /* GRID CARDS (FIX CỨNG CHIỀU CAO ĐỂ ĐƯỜNG KẺ THẲNG HÀNG) */
         .grid-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
         .info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
         .info-card img { height: 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
         
-        .card-line1 { font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.2; width: 100%; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; }
-        .card-line2 { font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.3; width: 100%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; min-height: 30px; }
-        .card-line3 { font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; margin-top: auto; padding-top: 10px; width: 100%; border-top: 1px dashed rgba(0,0,0,0.1); }
+        /* Cố định height cho Dòng 1 và Dòng 2 */
+        .card-line1 { height: 48px; font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.2; width: 100%; display: flex; align-items: center; justify-content: center; }
+        .card-line2 { height: 35px; font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.2; width: 100%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .card-line3 { width: 100%; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; }
 
         @media (max-width: 900px) { .grid-cards { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 480px) { .grid-cards { grid-template-columns: 1fr; } }
+        @media (max-width: 480px) { .grid-cards { grid-template-columns: 1fr; } .card-line1, .card-line2 { height: auto; min-height: 30px; } }
 
         /* TIMELINE */
         .timeline-item { padding: 15px; margin-bottom: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border-left: 4px solid var(--glow-yellow); transition: 0.3s; cursor: pointer; display: flex; align-items: center; font-size: 1.05rem; }
@@ -127,7 +127,7 @@
             .lookup-title { font-size: 1rem !important; }
         }
 
-        /* FLOATING CHO LAPTOP */
+        /* 2 CỤM FLOATING CHO LAPTOP */
         .desktop-floats { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
         .float-box { background: rgba(11, 43, 38, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         .float-text { font-family: 'Mulish'; font-size: 0.8rem; color: var(--glow-yellow); text-align: center; font-weight: 900; text-transform: uppercase; line-height: 1.3; }
@@ -167,7 +167,8 @@
                 <button class="active" onclick="switchTab('tab-gioithieu')">GIỚI&nbsp;<br class="mobile-br">THIỆU</button>
                 <button onclick="switchTab('tab-lichtrinh')">LỊCH&nbsp;<br class="mobile-br">TRÌNH</button>
                 <button class="btn-pulse-cyan" onclick="switchTab('tab-dangky')">
-                    ĐĂNG&nbsp;<br class="mobile-br">KÝ <img src="assets/images/butterfly.png" alt="glow">
+                    ĐĂNG<br class="mobile-br">
+                    <span class="inline-flex">KÝ&nbsp;<img src="assets/images/butterfly.png" alt="glow"></span>
                 </button>
                 <button onclick="switchTab('tab-tracuu')">TRA&nbsp;<br class="mobile-br">CỨU</button>
             </div>
@@ -187,7 +188,7 @@
                     <img src="assets/images/age.png">
                     <div class="card-line1">ĐỘ TUỔI</div>
                     <div class="card-line2">5 TUỔI TRỞ LÊN</div>
-                    <div class="card-line3">Trẻ dưới 8 tuổi cần có phụ huynh đi kèm<br><br></div>
+                    <div class="card-line3">Trẻ dưới 8 tuổi cần có phụ huynh đi kèm</div>
                 </div>
                 <div class="info-card">
                     <img src="assets/images/time.png">
@@ -199,12 +200,12 @@
                     <img src="assets/images/location.png">
                     <div class="card-line1">ĐỊA ĐIỂM</div>
                     <div class="card-line2">RỪNG MÃ ĐÀ</div>
-                    <div class="card-line3">Khu bảo tồn Thiên nhiên Đồng Nai<br><br></div>
+                    <div class="card-line3">Khu bảo tồn Thiên nhiên<br>Đồng Nai</div>
                 </div>
                 <div class="info-card">
                     <img src="assets/images/cost.png">
                     <div class="card-line1">CHI PHÍ 1 SUẤT</div>
-                    <div class="card-line2"><span id="display-cost">...</span> VNĐ</div>
+                    <div class="card-line2"><span id="display-cost">...</span>&nbsp;VNĐ</div>
                     <div class="card-line3">Đăng ký từ <span id="display-slkm">...</span> trở lên ưu đãi còn <span id="display-discount">...</span> VNĐ/ suất<br><br>Bao gồm bảo hiểm, xe đưa đón, ăn uống, dịch vụ Khu Bảo tồn, vật dụng đi rừng</div>
                 </div>
             </div>
@@ -236,15 +237,15 @@
 
             <h2 class="section-title">VẬT DỤNG CẦN THIẾT</h2>
             <div class="grid-cards">
-                <div class="info-card"><img src="assets/images/aoquan.png"><div class="card-line1">ÁO QUẦN DÀI</div><div class="card-line3">Che chắn khỏi cây gai,<br>côn trùng đốt</div></div>
-                <div class="info-card"><img src="assets/images/giayvo.png"><div class="card-line1">GIÀY BATA, VỚ CAO</div><div class="card-line3">Tự tin sải bước<br><br></div></div>
-                <div class="info-card"><img src="assets/images/sotay.png"><div class="card-line1">SỔ TAY VÀ BÚT</div><div class="card-line3">Ghi chép kiến thức thú vị<br><br></div></div>
-                <div class="info-card"><img src="assets/images/balo.png"><div class="card-line1">BALO GỌN NHẸ</div><div class="card-line3">Chứa các vật dụng<br>cá nhân cần thiết</div></div>
+                <div class="info-card"><img src="assets/images/aoquan.png"><div class="card-line1">ÁO QUẦN DÀI</div><div class="card-line2"></div><div class="card-line3">Che chắn khỏi cây gai,<br>côn trùng đốt</div></div>
+                <div class="info-card"><img src="assets/images/giayvo.png"><div class="card-line1">GIÀY BATA, VỚ CAO</div><div class="card-line2"></div><div class="card-line3">Tự tin sải bước</div></div>
+                <div class="info-card"><img src="assets/images/sotay.png"><div class="card-line1">SỔ TAY VÀ BÚT</div><div class="card-line2"></div><div class="card-line3">Ghi chép kiến thức thú vị</div></div>
+                <div class="info-card"><img src="assets/images/balo.png"><div class="card-line1">BALO GỌN NHẸ</div><div class="card-line2"></div><div class="card-line3">Chứa các vật dụng<br>cá nhân cần thiết</div></div>
                 
-                <div class="info-card"><img src="assets/images/binhnuoc.png"><div class="card-line1">BÌNH NƯỚC</div><div class="card-line3">Tối thiểu 500ml (*)<br><br></div></div>
-                <div class="info-card"><img src="assets/images/aomua.png"><div class="card-line1">ÁO MƯA</div><div class="card-line3">Dự phòng mưa bất chợt (*)<br><br></div></div>
-                <div class="info-card"><img src="assets/images/headlamp.png"><div class="card-line1">ĐÈN PIN ĐEO ĐẦU</div><div class="card-line3">Soi đường và quan sát (*)<br><br></div></div>
-                <div class="info-card"><img src="assets/images/butterfly.png"><div class="card-line1">SỰ HÁO HỨC</div><div class="card-line3">Để có chuyến trải nghiệm<br>thật vui và bổ ích nha ❤️</div></div>
+                <div class="info-card"><img src="assets/images/binhnuoc.png"><div class="card-line1">BÌNH NƯỚC</div><div class="card-line2"></div><div class="card-line3">Tối thiểu 500ml (*)</div></div>
+                <div class="info-card"><img src="assets/images/aomua.png"><div class="card-line1">ÁO MƯA</div><div class="card-line2"></div><div class="card-line3">Dự phòng mưa bất chợt (*)</div></div>
+                <div class="info-card"><img src="assets/images/headlamp.png"><div class="card-line1">ĐÈN PIN ĐEO ĐẦU</div><div class="card-line2"></div><div class="card-line3">Soi đường và quan sát (*)</div></div>
+                <div class="info-card"><img src="assets/images/butterfly.png"><div class="card-line1">SỰ HÁO HỨC</div><div class="card-line2"></div><div class="card-line3">Để có chuyến trải nghiệm<br>thật vui và bổ ích nha ❤️</div></div>
             </div>
             <p style="text-align: center; font-size: 1rem; margin-top: 20px;"><i>(*) BTC có dự phòng</i></p>
         </div>
