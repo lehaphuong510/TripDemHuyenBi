@@ -81,7 +81,7 @@ export async function onRequest(context) {
       body.ds_nguoi.forEach(nguoi => {
           dataRows.push([timestamp, body.sl, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
       });
-      // Đã thêm insertDataOption=INSERT_ROWS để tránh đè dòng
+      // Đã gắn INSERT_ROWS để 100% không đè dòng data
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
 
       const shortlistRow = [[bookingId, body.sl, body.totalMoney, "FALSE"]];
@@ -106,12 +106,11 @@ export async function onRequest(context) {
       }
       if(matched.length === 0) return new Response(JSON.stringify({ success: false, message: "Hệ thống chưa tìm thấy thông tin đăng ký của SĐT này." }), { headers: { 'Content-Type': 'application/json' } });
 
-      // Lấy tất cả Booking IDs liên quan đến SĐT này
       let bookingIds = [...new Set(matched.map(m => m[9]))];
       let displayBookingId = bookingIds.join(", "); 
       let matchedDot = matched[0][6];
       
-      // Cộng gộp người và tổng SL
+      // Tính gộp SĐT (Cộng dồn SL và lấy full danh sách)
       let totalSl = 0;
       let ds_nguoi = [];
       matched.forEach(m => {
@@ -167,6 +166,7 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
+  // FIX ĐỨT ĐIỂM BASE64 (Lọc sạch bóng mọi text rác, \n, \r)
   let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '');
   base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
   
