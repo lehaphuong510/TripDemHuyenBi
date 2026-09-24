@@ -132,14 +132,17 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  // Sửa lỗi atob: Dọn sạch mọi ký tự lạ và bù thêm dấu '=' cho đủ độ dài % 4 == 0
-  let pemContents = privateKey.replace(/-----BEGIN PRIVATE KEY-----/g, "").replace(/-----END PRIVATE KEY-----/g, "").replace(/\s+/g, "");
-  while (pemContents.length % 4 !== 0) {
-      pemContents += '=';
+  // FIX ATOB BẰNG WHITELIST: Lọc bỏ toàn bộ chữ rác, -, \n, \r, khoảng trắng. Chỉ giữ chữ cái, số, +, /, =
+  let base64Key = privateKey.replace(/-----.*?-----/g, ''); 
+  base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
+  
+  // Bù dấu '=' cho đến khi độ dài chia hết cho 4
+  while (base64Key.length % 4 !== 0) {
+      base64Key += '=';                                      
   }
 
-  const binaryDer = new Uint8Array(atob(pemContents).length);
-  for (let i = 0; i < atob(pemContents).length; i++) binaryDer[i] = atob(pemContents).charCodeAt(i);
+  const binaryDer = new Uint8Array(atob(base64Key).length);
+  for (let i = 0; i < atob(base64Key).length; i++) binaryDer[i] = atob(base64Key).charCodeAt(i);
   const key = await crypto.subtle.importKey("pkcs8", binaryDer.buffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
   const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(signatureInput));
   const jwt = `${signatureInput}.${btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
