@@ -19,7 +19,7 @@ function loadYoutube() {
     container.innerHTML = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/AqoJWlIdqng?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 12px;"></iframe>`;
 }
 
-// Bóc API Tải thẻ vào hàm riêng để tái sử dụng
+// Hàm tải Slot tách riêng để gọi Realtime
 async function loadSlots(isInit = false) {
     const container = document.getElementById('slot-container');
     if(isInit) {
@@ -163,7 +163,7 @@ async function holdSlotAndPay() {
             
             startCountdown(15 * 60);
             
-            // Cập nhật lại số Đang Giao Dịch realtime
+            // Tải lại thẻ để nhảy số Đang Giao Dịch
             await loadSlots();
         } else {
             alert(data.message || "Lỗi giữ chỗ, có thể người khác vừa đăng ký suất cuối cùng!");
@@ -239,11 +239,13 @@ async function submitFinalRegistration() {
                 successBox.style.display = 'block';
                 document.getElementById('successBookingId').innerText = submitData.bookingId;
                 
-                // Trượt mượt mà tập trung vào Box Thành Công
+                // Trượt lên Box Thành Công
                 successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Gọi bướm bay ra từ tâm màn hình bằng code JS thuần (ko xài var() CSS nữa)
                 createButterflies(); 
                 
-                // Cập nhật lại số Đã Đăng Ký realtime
+                // Tải lại thẻ để nhảy số Đã Đăng Ký
                 await loadSlots();
             }
         } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
@@ -349,23 +351,32 @@ async function lookupBooking() {
     } catch (err) { resultDiv.innerHTML = `<div class="glass-box" style="color:red; text-align:center;">Lỗi kết nối máy chủ.</div>`; }
 }
 
-// Bướm bay từ giữa tỏa ra các hướng
+// Bướm nổ ra từ giữa màn hình (Fix tương thích mọi trình duyệt)
 function createButterflies() {
     for (let i = 0; i < 30; i++) {
         let b = document.createElement("img");
         b.src = "assets/images/butterfly.png";
-        b.className = "flying-butterfly";
+        b.style.position = "fixed";
+        b.style.width = "30px";
+        b.style.zIndex = "9999";
+        b.style.pointerEvents = "none";
+        
+        // Đặt bướm ở giữa màn hình nhưng ẩn đi (scale 0)
         b.style.left = "50vw";
         b.style.top = "50vh";
+        b.style.transform = "translate(-50%, -50%) scale(0)";
+        b.style.transition = `all ${Math.random() * 2 + 2}s cubic-bezier(0.25, 1, 0.5, 1)`;
         
-        let dx = (Math.random() * 150 - 75) + "vw"; 
-        let dy = (Math.random() * 150 - 75) + "vh";
-        b.style.setProperty('--dx', dx);
-        b.style.setProperty('--dy', dy);
-        
-        b.style.animationDuration = (Math.random() * 2 + 2) + "s";
-        b.style.animationDelay = (Math.random() * 0.2) + "s";
         document.body.appendChild(b);
+
+        // Kích hoạt nổ ra các hướng
+        setTimeout(() => {
+            let dx = (Math.random() * 200 - 100) + "vw";
+            let dy = (Math.random() * 200 - 100) + "vh";
+            b.style.transform = `translate(${dx}, ${dy}) scale(1.5) rotate(${Math.random() * 360}deg)`;
+            b.style.opacity = "0";
+        }, 50);
+
         setTimeout(() => b.remove(), 5000);
     }
 }
