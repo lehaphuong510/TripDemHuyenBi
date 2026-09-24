@@ -5,14 +5,46 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   try {
-    const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
+    // ====================================================================
+    // 1. API ĐỒNG BỘ: NHẬN LỆNH TỪ GOOGLE SHEETS (GAS) BẮN XUỐNG
+    // ====================================================================
+    if (url.pathname === '/api/sync' && request.method === 'POST') {
+      const authHeader = request.headers.get('Authorization');
+      
+      // THAY MẬT KHẨU CỦA BẠN VÀO ĐÂY (PHẢI TRÙNG VỚI BÊN FILE APP SCRIPT CỦA SHEET)
+      if (authHeader !== 'Bearer 0519') {
+        return new Response('Unauthorized', { status: 401 });
+      }
 
-    if (url.pathname === '/api/config' && request.method === 'GET') {
+      const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
+      
+      // Kéo 3 bảng về
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
-      if(!dataConfig.values || dataConfig.values.length === 0) throw new Error("Chưa nhận được dữ liệu từ tab Config.");
       
-      const headers = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
+      const resData = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const dataData = await resData.json();
+
+      const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
+      const dataShort = await resShort.json();
+
+      // Cất thẳng vào Tủ kính Cloudflare KV
+      await env.TRIP_KV.put('CACHE_CONFIG', JSON.stringify(dataConfig.values || []));
+      await env.TRIP_KV.put('CACHE_DATA', JSON.stringify(dataData.values || []));
+      await env.TRIP_KV.put('CACHE_SHORTLIST', JSON.stringify(dataShort.values || []));
+
+      return new Response(JSON.stringify({ success: true, message: "Đồng bộ thành công!" }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // ====================================================================
+    // 2. LOAD THẺ TRANG CHỦ (CHỈ ĐỌC TỪ TỦ KÍNH KV)
+    // ====================================================================
+    if (url.pathname === '/api/config' && request.method === 'GET') {
+      const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
+      if (!configValuesStr) throw new Error("Chưa có dữ liệu. Vui lòng vào Google Sheet bấm nút Đồng bộ lần đầu!");
+      const configValues = JSON.parse(configValuesStr);
+
+      const headers = configValues[0].map(h => h ? h.toString().trim() : "");
       const idxTenDot = headers.indexOf('Nội dung option');
       const idxGioiHan = headers.indexOf('SL giới hạn');
       const idxCost = headers.indexOf('Vé 1 người');
@@ -21,44 +53,49 @@ export async function onRequest(context) {
       
       const parseNumber = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
 
-      const row2 = dataConfig.values[1] || [];
+      const row2 = configValues[1] || [];
       const fixedCost = parseNumber(row2[idxCost]);
       const slKhuyenMai = parseNumber(row2[idxSLKM]);
       const schemeKhuyenMai = parseNumber(row2[idxSchemeKM]);
       
       let options = [];
 
-      const resData = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:G?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
-      const rawData = await resData.json();
-      const dataRows = rawData.values || [];
-      let bookedMap = {};
+      // Đọc Data từ tủ kính để đếm số Đã ĐK
+      const dataValuesStr = await env.TRIP_KV.get('CACHE_DATA');
+      const dataRows = dataValuesStr ? JSON.parse(dataValuesStr) : [];
+      let bookedMapCount = {};
       for(let i=1; i<dataRows.length; i++) {
-          let sl = parseInt(dataRows[i][1]) || 0; // Đếm số lượng thực tế từ Data
           let dot = dataRows[i][6];
-          if(dot) { bookedMap[dot] = (bookedMap[dot] || 0) + sl; }
+          // Nguyên tắc Count số dòng (mỗi dòng là 1 người)
+          if(dot) { bookedMapCount[dot] = (bookedMapCount[dot] || 0) + 1; }
       }
 
       let heldMap = {};
       try {
           const listed = await env.TRIP_KV.list();
           for (const key of listed.keys) {
-              const val = await env.TRIP_KV.get(key.name);
-              if (val) {
-                  const parsed = JSON.parse(val);
-                  heldMap[parsed.dot] = (heldMap[parsed.dot] || 0) + parsed.sl;
+              if (key.name.startsWith("HOLD-")) {
+                  const val = await env.TRIP_KV.get(key.name);
+                  if (val) {
+                      const parsed = JSON.parse(val);
+                      heldMap[parsed.dot] = (heldMap[parsed.dot] || 0) + parsed.sl;
+                  }
               }
           }
       } catch(e) {} 
 
-      for (let i = 1; i < dataConfig.values.length; i++) {
-        let dotName = dataConfig.values[i][idxTenDot];
+      for (let i = 1; i < configValues.length; i++) {
+        let dotName = configValues[i][idxTenDot];
         if (dotName && dotName.trim() !== "") {
-            options.push({ name: dotName, limit: parseNumber(dataConfig.values[i][idxGioiHan]), booked: bookedMap[dotName] || 0, held: heldMap[dotName] || 0 });
+            options.push({ name: dotName, limit: parseNumber(configValues[i][idxGioiHan]), booked: bookedMapCount[dotName] || 0, held: heldMap[dotName] || 0 });
         }
       }
       return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // ====================================================================
+    // 3. API GIỮ CHỖ TẠM THỜI (LƯU KV 15 PHÚT)
+    // ====================================================================
     if (url.pathname === '/api/hold' && request.method === 'POST') {
         const { dot, sl } = await request.json();
         const holdId = "HOLD-" + Date.now();
@@ -66,6 +103,9 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ success: true, holdId }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // ====================================================================
+    // 4. KHÁCH SUBMIT (GHI VÀO GOOGLE SHEET & CẬP NHẬT KV ĐỂ TRA CỨU LIỀN)
+    // ====================================================================
     if (url.pathname === '/api/submit' && request.method === 'POST') {
       const body = await request.json();
       const timestamp = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
@@ -73,26 +113,35 @@ export async function onRequest(context) {
       
       const dataRows = [];
       body.ds_nguoi.forEach(nguoi => {
-          // Ghi mỗi người 1 dòng. Số lượng (SL) tạm ghi là 1 cho mục đích đếm Count ở các luồng khác nếu muốn.
-          // Hoặc ghi theo body.sl. Code cũ đang lấy body.sl, ta giữ body.sl nhưng lúc tra cứu sẽ đếm (count) row.
+          // Ghi mỗi người 1 dòng
           dataRows.push([timestamp, 1, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
       });
+      
+      // Lệnh gọi duy nhất tiêu tốn API Google: Ném vào Data
+      const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
 
-      // YÊU CẦU: BỎ GHI VÀO TAB SHORTLIST
-      // Xóa block code post vào Shortlist!A4:D ở đây.
+      // NHÉT LUÔN BẢN GHI NÀY VÀO TỦ KÍNH KV ĐỂ KHÁCH TRA CỨU ĐƯỢC NGAY (CHƯA CẦN BẠN ĐỒNG BỘ)
+      const currentDataStr = await env.TRIP_KV.get('CACHE_DATA');
+      if (currentDataStr) {
+          let currentData = JSON.parse(currentDataStr);
+          currentData.push(...dataRows); 
+          await env.TRIP_KV.put('CACHE_DATA', JSON.stringify(currentData));
+      }
 
       if (body.holdId) { await env.TRIP_KV.delete(body.holdId); }
       return new Response(JSON.stringify({ success: true, bookingId }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // ====================================================================
+    // 5. TRA CỨU (CHỈ ĐỌC TỪ TỦ KÍNH KV)
+    // ====================================================================
     if (url.pathname === '/api/lookup' && request.method === 'POST') {
       const { phone } = await request.json();
       const cleanPhone = phone.trim().replace(/^0+/, '');
 
-      const resData = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
-      const sheetData = await resData.json();
-      const rows = sheetData.values || [];
+      const dataValuesStr = await env.TRIP_KV.get('CACHE_DATA');
+      const rows = dataValuesStr ? JSON.parse(dataValuesStr) : [];
       
       let matched = [];
       for(let i = 1; i < rows.length; i++) {
@@ -104,29 +153,29 @@ export async function onRequest(context) {
       let rawName = matched[0][2] || "Anh/Chị";
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
 
-      // 1. Gộp theo Booking ID từ Tab Data (COUNT số dòng)
+      // Nhóm dòng theo mã Booking ID
       let bookingsMap = {};
       matched.forEach(r => {
           let bId = r[9];
           if(!bookingsMap[bId]) {
               bookingsMap[bId] = { bId: bId, dot: r[6], sl: 0, ds_nguoi: [], phoneDisplay: matched[0][4], isChecked: false, money: 0 };
           }
-          bookingsMap[bId].sl += 1; // COUNT số dòng
+          bookingsMap[bId].sl += 1; // COUNT
           bookingsMap[bId].ds_nguoi.push({name: r[2], yob: r[3]});
       });
 
-      // 2. Map trạng thái Thanh toán từ Tab Shortlist
-      const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
-      const shortData = await resShort.json();
-      for(let i = 1; i < (shortData.values || []).length; i++) {
-          let sId = shortData.values[i][0];
+      // Lấy trạng thái từ Shortlist trong tủ kính KV
+      const shortValuesStr = await env.TRIP_KV.get('CACHE_SHORTLIST');
+      const shortDataValues = shortValuesStr ? JSON.parse(shortValuesStr) : [];
+      for(let i = 1; i < shortDataValues.length; i++) {
+          let sId = shortDataValues[i][0];
           if(bookingsMap[sId]) {
-              bookingsMap[sId].isChecked = (shortData.values[i][3] === "TRUE");
-              bookingsMap[sId].money = parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
+              bookingsMap[sId].isChecked = (shortDataValues[i][3] === "TRUE");
+              bookingsMap[sId].money = parseInt(String(shortDataValues[i][2]).replace(/[^\d]/g, '')) || 0;
           }
       }
 
-      // 3. Tách làm 2 nhóm (Thành công / Chờ đối soát)
+      // Tách nhóm (Thanh toán vs Đang chờ)
       let paidGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
       let pendGrp = { bIds: [], totalSl: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
 
@@ -139,28 +188,29 @@ export async function onRequest(context) {
           target.dots.add(b.dot);
       });
 
-      // Convert Set to Array for JSON serialization
       paidGrp.dots = Array.from(paidGrp.dots);
       pendGrp.dots = Array.from(pendGrp.dots);
 
-      // 4. Bốc Zalo Link cho nhóm Paid
+      // Nhặt Link Zalo từ Config trong Tủ Kính
       let zaloLinks = [];
       if (paidGrp.bIds.length > 0) {
-          const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
-          const dataConfig = await resConfig.json();
-          const configHeaders = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
-          const idxTenDot = configHeaders.indexOf('Nội dung option');
-          const idxZalo = configHeaders.indexOf('Link Zalo');
-          
-          if(idxTenDot !== -1 && idxZalo !== -1) {
-              paidGrp.dots.forEach(d => {
-                  for(let r=1; r<dataConfig.values.length; r++) {
-                      if(dataConfig.values[r][idxTenDot] === d && dataConfig.values[r][idxZalo]) {
-                          zaloLinks.push(dataConfig.values[r][idxZalo]);
-                          break;
+          const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
+          const dataConfigValues = configValuesStr ? JSON.parse(configValuesStr) : [];
+          if (dataConfigValues.length > 0) {
+              const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
+              const idxTenDot = configHeaders.indexOf('Nội dung option');
+              const idxZalo = configHeaders.indexOf('Link Zalo');
+              
+              if(idxTenDot !== -1 && idxZalo !== -1) {
+                  paidGrp.dots.forEach(d => {
+                      for(let r=1; r<dataConfigValues.length; r++) {
+                          if(dataConfigValues[r][idxTenDot] === d && dataConfigValues[r][idxZalo]) {
+                              zaloLinks.push(dataConfigValues[r][idxZalo]);
+                              break;
+                          }
                       }
-                  }
-              });
+                  });
+              }
           }
       }
 
