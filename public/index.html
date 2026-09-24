@@ -58,7 +58,6 @@
         .btn-pulse-cyan { color: var(--glow-cyan) !important; animation: cyanPulse 0.7s infinite alternate; }
         @keyframes cyanPulse { 0% { text-shadow: 0 0 5px rgba(0,255,255,0.4); } 100% { text-shadow: 0 0 15px var(--glow-cyan), 0 0 5px var(--glow-cyan); } }
         
-        /* Bướm và text ĐĂNG KÝ trên Mobile */
         .inline-flex { display: inline-flex; align-items: center; white-space: nowrap; }
         .btn-butterfly { width: 28px; filter: drop-shadow(0 0 8px var(--glow-cyan)); margin-left: 5px; }
         .mobile-br { display: none; }
@@ -77,8 +76,6 @@
         .glass-box { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); line-height: 1.6; font-size: 1.05rem; }
         .glass-box p { text-align: justify; }
         h2.section-title { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); text-transform: uppercase; text-align: center; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-bottom: 10px; margin-top: 0; font-size: 1.5rem; }
-
-        
 
         /* TIMELINE */
         .timeline-item { padding: 15px; margin-bottom: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border-left: 4px solid var(--glow-yellow); transition: 0.3s; cursor: pointer; display: flex; align-items: center; font-size: 1.05rem; }
@@ -143,146 +140,31 @@
         .mobile-footer-content { display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; width: 100%; }
         @media (max-width: 768px) { .desktop-floats { display: none; } .mobile-footer { display: block; } }
 
-        /* Animation Bướm & Đom đóm Tra cứu */
-        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: flyUp 4s linear forwards; }
-        @keyframes flyUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } }
+        /* TÙY CHỈNH LẠI HIỆU ỨNG BƯỚM NỔ RA TỪ TRUNG TÂM */
+        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: explodeOut 4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes explodeOut { 
+            0% { transform: translate(0, 0) scale(0.5); opacity: 1; } 
+            100% { transform: translate(var(--dx), var(--dy)) scale(1.5) rotate(360deg); opacity: 0; } 
+        }
         
         .anim-firefly { position: fixed; background: #FFD700; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 15px 5px #FFD700; pointer-events: none; z-index: 9999; animation: flyRandom 5s linear forwards; }
         @keyframes flyRandom { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(calc(100vw * var(--dx)), calc(-100vh * var(--dy))) scale(0.5); opacity: 0; } }
+
         /* ================================
-           CARD GRID - DÙNG CHUNG
+            CARD GRID - CSS VÀNG CỦA PHƯƠNG
         ================================ */
-        
-        .grid-cards,
-        .vd-grid-cards {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-            align-items: stretch;
-        }
-        
-        .info-card,
-        .vd-info-card {
-            background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%);
-            color: var(--bg-navy);
-            border-radius: 12px;
-            padding: 20px 10px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        
-            box-sizing: border-box;
-            height: auto;
-            min-width: 0;
-        }
-        
-        .info-card img,
-        .vd-info-card img {
-            width: auto;
-            height: 45px;
-            flex: 0 0 45px;
-            object-fit: contain;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
-        }
-        
-        /* Tiêu đề card */
-        .card-line1,
-        .vd-card-line1 {
-            width: 100%;
-            min-height: 2.4em;
-        
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        
-            font-family: 'Mulish', sans-serif;
-            font-weight: 900;
-            font-size: 1.05rem;
-            text-transform: uppercase;
-            color: #000;
-            line-height: 1.2;
-            margin-bottom: 5px;
-        }
-        
-        /* Dòng thông tin phụ */
-        .card-line2,
-        .vd-card-line2 {
-            width: 100%;
-            min-height: 2.6em;
-        
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        
-            font-weight: 900;
-            font-size: 1.1rem;
-            color: #0B2B26;
-            text-transform: uppercase;
-            line-height: 1.3;
-            margin-bottom: 0;
-        }
-        
-        /* Nội dung mô tả */
-        .card-line3,
-        .vd-card-line3 {
-            width: 100%;
-            box-sizing: border-box;
-        
-            margin-top: 15px;
-            padding-top: 15px;
-        
-            border-top: 1px dashed rgba(0,0,0,0.25);
-        
-            font-size: 0.85rem;
-            font-style: italic;
-            line-height: 1.4;
-            color: #222;
-        }
-        
-        /* Chiều cao riêng cho hai nhóm card */
-        .card-line3 {
-            height: 140px;
-        }
-        
-        .vd-card-line3 {
-            height: 75px;
-        }
-        
-        /* Tablet */
-        @media (max-width: 900px) {
-            .grid-cards,
-            .vd-grid-cards {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        
-            .card-line3,
-            .vd-card-line3 {
-                height: auto;
-            }
-        }
-        
-        /* Mobile */
-        @media (max-width: 480px) {
-            .grid-cards,
-            .vd-grid-cards {
-                grid-template-columns: 1fr;
-            }
-        }
-        /* Bỏ khoảng trống của dòng 2 trong card vật dụng */
-        .vd-card-line2 {
-            display: none;
-        }
-        
-        /* Đưa đường gạch lại gần tiêu đề */
-        .vd-card-line3 {
-            margin-top: 8px;
-        }
-        
+        .grid-cards, .vd-grid-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; margin-top: 20px; align-items: stretch; }
+        .info-card, .vd-info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; height: auto; min-width: 0; }
+        .info-card img, .vd-info-card img { width: auto; height: 45px; flex: 0 0 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        .card-line1, .vd-card-line1 { width: 100%; min-height: 2.4em; display: flex; align-items: center; justify-content: center; font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.2; margin-bottom: 5px; }
+        .card-line2, .vd-card-line2 { width: 100%; min-height: 2.6em; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.3; margin-bottom: 0; }
+        .card-line3, .vd-card-line3 { width: 100%; box-sizing: border-box; margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.25); font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; }
+        .card-line3 { height: 140px; }
+        .vd-card-line3 { height: 75px; }
+        @media (max-width: 900px) { .grid-cards, .vd-grid-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .card-line3, .vd-card-line3 { height: auto; } }
+        @media (max-width: 480px) { .grid-cards, .vd-grid-cards { grid-template-columns: 1fr; } }
+        .vd-card-line2 { display: none; }
+        .vd-card-line3 { margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -305,11 +187,9 @@
 
         <div class="main-nav-wrapper">
             <div class="main-nav">
-                <!-- Laptop có khoảng trắng, Mobile rớt dòng -->
                 <button class="active" onclick="switchTab('tab-gioithieu')"><span class="nav-text">GIỚI&nbsp;<br class="mobile-br">THIỆU</span></button>
                 <button onclick="switchTab('tab-lichtrinh')"><span class="nav-text">LỊCH&nbsp;<br class="mobile-br">TRÌNH</span></button>
                 <button class="btn-pulse-cyan" onclick="switchTab('tab-dangky')">
-                    <!-- Text ĐĂNG KÝ và Bướm kề sát nhau trên 1 khối -->
                     <span class="nav-text">ĐĂNG&nbsp;<br class="mobile-br"><span class="inline-flex">KÝ <img src="assets/images/butterfly.png" alt="glow" class="btn-butterfly"></span></span> 
                 </button>
                 <button onclick="switchTab('tab-tracuu')"><span class="nav-text">TRA&nbsp;<br class="mobile-br">CỨU</span></button>
@@ -325,7 +205,6 @@
             </div>
 
             <h2 class="section-title">THÔNG TIN TRIP</h2>
-            <!-- DÙNG BỘ CSS 1: Ép cứng height .card-line3 để gióng đường kẻ ngang -->
             <div class="grid-cards">
                 <div class="info-card">
                     <img src="assets/images/age.png">
@@ -379,7 +258,6 @@
             </div>
 
             <h2 class="section-title">VẬT DỤNG CẦN THIẾT</h2>
-            <!-- DÙNG BỘ CSS 2: Ép cứng height .vd-card-line3 để gióng đường kẻ ngang -->
             <div class="vd-grid-cards">
                 <div class="vd-info-card"><img src="assets/images/aoquan.png"><div class="vd-card-line1">ÁO QUẦN DÀI</div><div class="vd-card-line2"></div><div class="vd-card-line3">Che chắn khỏi cây gai,<br>côn trùng đốt</div></div>
                 <div class="vd-info-card"><img src="assets/images/giayvo.png"><div class="vd-card-line1">GIÀY BATA, VỚ CAO</div><div class="vd-card-line2"></div><div class="vd-card-line3">Tự tin sải bước</div></div>
@@ -427,11 +305,15 @@
 
             <!-- PAYMENT BOX NỀN TRẮNG 60% -->
             <div id="paymentBox" class="payment-box">
-                <h2 style="color: #0F5132; margin-top:0; text-align:center;">⏳ VUI LÒNG HOÀN TẤT TRONG:</h2>
+                <!-- Đổi Icon Đồng hồ cát -->
+                <h2 style="color: #0F5132; margin-top:0; text-align:center; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                    <img src="assets/images/donghocat.png" style="width: 28px;"> VUI LÒNG HOÀN TẤT TRONG:
+                </h2>
                 <div class="timer" id="countdownTimer">15:00</div>
                 
                 <div class="payment-flex">
                     <div class="payment-info">
+                        <!-- Icon Cost cho Tổng tiền -->
                         <p style="font-size: 1.1rem; margin-top:0; display:flex; align-items:center; gap:8px;">
                             <img src="assets/images/cost.png" style="width:24px; filter:invert(1);">
                             <b>Tổng tiền:</b> <span id="payTotalAmount" style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;"></span>
@@ -450,11 +332,12 @@
                 <button class="btn-primary" id="btnSubmitFinal" onclick="submitFinalRegistration()">XÁC NHẬN ĐÃ CHUYỂN KHOẢN</button>
             </div>
 
-            <!-- BOX SUCCESS ẨN THANH TOÁN -->
+            <!-- BOX SUCCESS: Text Align Center và Button ĐĂNG KÝ ĐỢT KHÁC -->
             <div id="submitSuccessBox" class="glass-box" style="display: none; background: rgba(25, 135, 84, 0.9); text-align: center; border: 2px solid var(--glow-yellow);">
                 <h2 style="color: var(--glow-yellow); margin-top:0;">🎉 THÀNH CÔNG!</h2>
-                <p style="font-size: 1.1rem; line-height: 1.6;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
-                <p style="font-size: 1.1rem; line-height: 1.6;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ. HỆ THỐNG SẼ SỚM CẬP NHẬT VỀ TRẠNG THÁI THANH TOÁN Ạ!</p>
+                <p style="font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
+                <p style="font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ. HỆ THỐNG SẼ SỚM CẬP NHẬT VỀ TRẠNG THÁI THANH TOÁN Ạ!</p>
+                <button class="btn-primary" style="width: auto; padding: 10px 30px; margin-top: 15px;" onclick="resetRegistrationForm()">ĐĂNG KÝ ĐỢT KHÁC</button>
             </div>
         </div>
 
