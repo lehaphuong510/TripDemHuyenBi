@@ -29,6 +29,7 @@
 
         @media (max-width: 640px) { body { background-image: url('assets/images/Backgroundmobile.webp'); } }
 
+        /* Đom đóm Background */
         .firefly { position: fixed; background: var(--glow-yellow); width: 4px; height: 4px; border-radius: 50%; box-shadow: 0 0 12px 3px var(--glow-yellow); animation: float 4s infinite ease-in-out; pointer-events: none; z-index: 0; }
         .firefly-blink { position: fixed; background: var(--glow-yellow); width: 5px; height: 5px; border-radius: 50%; box-shadow: 0 0 15px 5px var(--glow-yellow); animation: blink 2.5s infinite ease-in-out alternate; pointer-events: none; z-index: 0; }
         @keyframes float { 0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; } 50% { transform: translateY(-30px) translateX(15px); opacity: 1; } }
@@ -51,22 +52,22 @@
             flex: 1; background: transparent; color: white; border: none; padding: 12px 10px;
             font-family: 'Mulish', sans-serif; font-size: 1rem; font-weight: bold; border-radius: 25px;
             cursor: pointer; transition: 0.3s; text-transform: uppercase;
-            display: flex; align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center; line-height: 1.3;
         }
         .main-nav button:hover, .main-nav button.active { color: var(--glow-yellow); text-shadow: 0 0 10px var(--glow-yellow); font-weight: 900; }
         
-        .btn-pulse-cyan { color: var(--glow-cyan) !important; animation: cyanPulse 0.7s infinite alternate; }
-        @keyframes cyanPulse { 0% { text-shadow: 0 0 5px rgba(0,255,255,0.4); } 100% { text-shadow: 0 0 15px var(--glow-cyan), 0 0 5px var(--glow-cyan); } }
-        .btn-pulse-cyan img { width: 28px; filter: drop-shadow(0 0 8px var(--glow-cyan)); margin-left: 5px; }
+        .btn-pulse { color: white; animation: glowPulse 1.5s infinite alternate; }
+        @keyframes glowPulse { 0% { text-shadow: 0 0 5px rgba(255,215,0,0.3); } 100% { color: var(--glow-yellow); text-shadow: 0 0 15px var(--glow-yellow), 0 0 5px var(--glow-yellow); } }
+        .btn-pulse img { width: 26px; filter: drop-shadow(0 0 8px var(--glow-yellow)); margin-left: 5px; }
 
         .mobile-br { display: none; }
-        .inline-flex { display: inline-flex; align-items: center; } /* Bọc KÝ và BƯỚM */
+        .inline-flex { display: inline-flex; align-items: center; justify-content: center; } 
         
         @media (max-width: 640px) { 
             .main-nav { display: flex; flex-wrap: nowrap; border-radius: 16px; gap: 2px; padding: 6px; }
             .main-nav button { font-size: 0.8rem; padding: 8px 2px; flex-direction: column; line-height: 1.2; justify-content: center; }
             .mobile-br { display: block; }
-            .btn-pulse-cyan img { width: 20px; margin-left: 3px; }
+            .btn-pulse img { width: 18px; margin-left: 3px; }
         }
 
         .tab-content { display: none; animation: fadeIn 0.4s; }
@@ -77,54 +78,66 @@
         .glass-box p { text-align: justify; }
         h2.section-title { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); text-transform: uppercase; text-align: center; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-bottom: 10px; margin-top: 0; font-size: 1.5rem; }
 
-        /* GRID CARDS (FIX CỨNG CHIỀU CAO ĐỂ ĐƯỜNG KẺ THẲNG HÀNG) */
+        /* GRID CARDS CỐ ĐỊNH */
         .grid-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
         .info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
         .info-card img { height: 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
         
-        /* Cố định height cho Dòng 1 và Dòng 2 */
         .card-line1 { height: 48px; font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.2; width: 100%; display: flex; align-items: center; justify-content: center; }
         .card-line2 { height: 35px; font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.2; width: 100%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
-        .card-line3 { width: 100%; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; }
+        .card-line3 { width: 100%; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; margin-top: auto; }
 
         @media (max-width: 900px) { .grid-cards { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 480px) { .grid-cards { grid-template-columns: 1fr; } .card-line1, .card-line2 { height: auto; min-height: 30px; } }
 
-        /* TIMELINE */
         .timeline-item { padding: 15px; margin-bottom: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border-left: 4px solid var(--glow-yellow); transition: 0.3s; cursor: pointer; display: flex; align-items: center; font-size: 1.05rem; }
         .timeline-item:hover { background: rgba(255,215,0,0.1); transform: translateX(5px); border-color: #FFF; }
         .timeline-time { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); font-weight: 900; width: 70px; flex-shrink: 0; }
         .timeline-hover-icon { display: none; width: 28px; margin-left: auto; }
         .timeline-item:hover .timeline-hover-icon { display: block; animation: flutter 0.3s infinite; }
 
-        /* SLOTS */
+        /* SLOTS (Design mới Xanh ngọc lục bảo - Style DNA) */
         .slot-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; }
-        .slot-card { background: rgba(25, 135, 84, 0.9); border: 2px solid #4CAF50; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; width: calc(50% - 15px); min-width: 250px; box-sizing: border-box; }
-        .slot-card.selected { background: #0F5132; border-color: var(--glow-yellow); box-shadow: 0 0 15px rgba(255,215,0,0.5); }
+        .slot-card { background: rgba(11, 43, 38, 0.8); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; width: calc(50% - 15px); min-width: 250px; box-sizing: border-box; }
+        .slot-card:hover { transform: translateY(-5px); border-color: var(--glow-yellow); box-shadow: 0 5px 15px rgba(255,215,0,0.2); }
+        .slot-card.selected { background: #0F5132; border-color: var(--glow-yellow); box-shadow: 0 0 20px rgba(255,215,0,0.5); }
         .slot-card h3 { margin: 0 0 10px 0; font-family: 'Mulish'; color: white; font-size: 1.2rem; }
-        .slot-breakdown { display: flex; justify-content: space-between; font-size: 0.9rem; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; }
-        .slot-available { font-size: 1.6rem; font-weight: bold; color: var(--glow-yellow); margin: 10px 0; }
+        .slot-breakdown { display: flex; justify-content: space-between; font-size: 0.9rem; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; align-items: center; }
+        .slot-available { font-size: 1.6rem; font-weight: bold; color: var(--glow-yellow); margin: 10px 0; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
 
         input[type="text"], input[type="number"], input[type="tel"] { width: 100%; padding: 14px; background: rgba(255,255,255,0.95); border: none; border-radius: 8px; font-family: 'Quicksand'; font-weight: bold; color: #333; margin-top: 5px; box-sizing: border-box; font-size: 1rem; }
         .btn-primary { background: linear-gradient(135deg, #198754 0%, #0F5132 100%); color: white; border: 1px solid #4CAF50; padding: 12px 15px; width: 100%; border-radius: 8px; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; margin-top: 15px; }
         .btn-primary:hover { transform: scale(1.02); filter: brightness(1.2); }
 
-        .payment-box { background: rgba(255,255,255,0.95); color: #000; padding: 25px; border-radius: 12px; text-align: center; border: 3px dashed #198754; display: none; }
-        .timer { font-family: 'Mulish'; font-size: 2.5rem; color: #D32F2F; font-weight: 900; animation: pulse 1s infinite; }
+        /* PAYMENT BOX 2 CỘT */
+        .payment-box { background: rgba(255,255,255,0.98); color: #000; padding: 25px; border-radius: 12px; border: 3px dashed #198754; display: none; }
+        .payment-flex { display: flex; gap: 20px; align-items: center; background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .payment-info { flex: 1; text-align: left; }
+        .payment-qr { width: 150px; flex-shrink: 0; text-align: center; }
+        .payment-qr img { width: 100%; max-width: 150px; border-radius: 8px; border: 2px solid #198754; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .timer { font-family: 'Mulish'; font-size: 2.5rem; color: #D32F2F; font-weight: 900; animation: pulse 1s infinite; text-align: center; }
+        @media (max-width: 640px) { .payment-flex { flex-direction: column; text-align: center; } .payment-info { text-align: center; } }
 
-        /* NÚT TRA CỨU UI MỚI */
+        /* TRA CỨU UI MỚI */
         .lookup-flex { display: flex; gap: 10px; align-items: stretch; justify-content: center; margin-top: 15px;}
         .input-wrapper { position: relative; flex: 1; max-width: 350px; }
         .input-wrapper input { padding-right: 45px; margin-top: 0; height: 100%; }
         .input-wrapper img { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 26px; }
         .btn-search { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #091221; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
         .btn-search:hover { box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1.02); }
+        
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 1rem; }
+        .result-table th { background: rgba(15, 81, 50, 0.8); color: var(--glow-yellow); padding: 12px; font-family: 'Mulish'; text-transform: uppercase; }
+        .result-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); }
+        
+        .zalo-banner { background: linear-gradient(135deg, #FFD700, #FFA500); padding: 20px; border-radius: 12px; color: #091221; font-weight: 900; margin-top: 25px; text-align: center; border: 2px dashed #D32F2F; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .zalo-banner a { display: inline-block; background: #D32F2F; color: white; padding: 12px 25px; text-decoration: none; border-radius: 30px; margin-top: 10px; font-family: 'Mulish'; transition: 0.3s; text-transform: uppercase; }
+        .zalo-banner a:hover { transform: scale(1.05); box-shadow: 0 4px 10px rgba(211,47,47,0.4); }
 
         @media (max-width: 640px) { 
             .lookup-flex { flex-direction: column; width: 100%; align-items: center; } 
             .input-wrapper { width: 90%; max-width: 100%; height: 50px; }
             .btn-search { width: auto; min-width: 120px; padding: 12px 20px; margin-top: 10px; }
-            .lookup-title { font-size: 1rem !important; }
         }
 
         /* 2 CỤM FLOATING CHO LAPTOP */
@@ -134,14 +147,16 @@
         .float-box img { width: 35px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
         .float-box img:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 4px 8px var(--glow-yellow)); }
         
-        /* FOOTER CHO MOBILE */
         .mobile-footer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(11, 43, 38, 0.95); padding: 10px 0; z-index: 100; border-top: 1px solid var(--glass-border); }
         .mobile-footer-content { display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; width: 100%; }
-        
         @media (max-width: 768px) { .desktop-floats { display: none; } .mobile-footer { display: block; } }
 
+        /* Animation Bướm & Đom đóm Tra cứu */
         .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: flyUp 4s linear forwards; }
         @keyframes flyUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } }
+        
+        .anim-firefly { position: fixed; background: #FFD700; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 15px 5px #FFD700; pointer-events: none; z-index: 9999; animation: flyRandom 5s linear forwards; }
+        @keyframes flyRandom { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(calc(100vw * var(--dx)), calc(-100vh * var(--dy))) scale(0.5); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -166,9 +181,9 @@
             <div class="main-nav">
                 <button class="active" onclick="switchTab('tab-gioithieu')">GIỚI&nbsp;<br class="mobile-br">THIỆU</button>
                 <button onclick="switchTab('tab-lichtrinh')">LỊCH&nbsp;<br class="mobile-br">TRÌNH</button>
-                <button class="btn-pulse-cyan" onclick="switchTab('tab-dangky')">
-                    ĐĂNG<br class="mobile-br">
-                    <span class="inline-flex">KÝ&nbsp;<img src="assets/images/butterfly.png" alt="glow"></span>
+                <button class="btn-pulse" onclick="switchTab('tab-dangky')">
+                    ĐĂNG&nbsp;<br class="mobile-br">
+                    <span class="inline-flex">KÝ <img src="assets/images/butterfly.png" alt="glow"></span>
                 </button>
                 <button onclick="switchTab('tab-tracuu')">TRA&nbsp;<br class="mobile-br">CỨU</button>
             </div>
@@ -200,7 +215,7 @@
                     <img src="assets/images/location.png">
                     <div class="card-line1">ĐỊA ĐIỂM</div>
                     <div class="card-line2">RỪNG MÃ ĐÀ</div>
-                    <div class="card-line3">Khu bảo tồn Thiên nhiên<br>Đồng Nai</div>
+                    <div class="card-line3">Khu bảo tồn Thiên nhiên Đồng Nai</div>
                 </div>
                 <div class="info-card">
                     <img src="assets/images/cost.png">
@@ -283,20 +298,31 @@
             </div>
 
             <div id="paymentBox" class="payment-box">
-                <h2 style="color: #0F5132; margin-top:0;">⏳ VUI LÒNG HOÀN TẤT TRONG:</h2>
+                <h2 style="color: #0F5132; margin-top:0; text-align:center;">⏳ VUI LÒNG HOÀN TẤT TRONG:</h2>
                 <div class="timer" id="countdownTimer">15:00</div>
                 
-                <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <p style="font-size: 1.1rem;"><b>Tổng tiền:</b> <span id="payTotalAmount" style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;"></span></p>
-                    <p style="font-size: 1.1rem;"><b>Tài khoản:</b> To Van Quang - Vietcombank - <b style="font-size: 1.2rem;">0251001799405</b></p>
-                    <p style="font-size: 1.1rem; margin-bottom: 0;"><b>Nội dung CK:</b> <span id="paySyntax" style="font-family: monospace; font-size: 1.2rem; background: #fff; padding: 5px 10px; border: 1px solid #ccc; font-weight: bold; border-radius: 4px;"></span></p>
+                <div class="payment-flex">
+                    <div class="payment-info">
+                        <p style="font-size: 1.1rem; margin-top:0;"><b>Tổng tiền:</b> <span id="payTotalAmount" style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;"></span></p>
+                        <p style="font-size: 1.1rem;"><b>Tài khoản:</b> To Van Quang - Vietcombank - <b style="font-size: 1.2rem;">0251001799405</b></p>
+                        <p style="font-size: 1.1rem; margin-bottom: 0;"><b>Nội dung CK:</b> <br><span id="paySyntax" style="font-family: monospace; font-size: 1.2rem; background: #fff; padding: 5px 10px; border: 1px solid #ccc; font-weight: bold; border-radius: 4px; display:inline-block; margin-top:5px; word-break: break-all;"></span></p>
+                    </div>
+                    <div class="payment-qr">
+                        <img src="assets/images/TTCK.png" alt="QR Code">
+                    </div>
                 </div>
 
-                <label style="font-weight: bold; color: #333; font-size: 1.1rem;">Tải lên Bill xác nhận (Bắt buộc):</label>
+                <label style="font-weight: bold; color: #333; font-size: 1.1rem; display:block; text-align:left;">Tải lên Bill xác nhận (Bắt buộc):</label>
                 <input type="file" id="billUpload" accept="image/*" style="border: 2px dashed #198754; padding: 15px; width: 100%; border-radius: 8px; margin-top: 10px; background: #fafafa;">
                 
                 <button class="btn-primary" id="btnSubmitFinal" onclick="submitFinalRegistration()">XÁC NHẬN ĐÃ CHUYỂN KHOẢN</button>
-                <div id="submitStatus" style="margin-top: 20px; font-weight: bold; color: #198754; font-size: 1.2rem;"></div>
+            </div>
+
+            <!-- BOX SUCCESS MỚI ẨN THANH TOÁN -->
+            <div id="submitSuccessBox" class="glass-box" style="display: none; background: rgba(25, 135, 84, 0.9); text-align: center; border: 2px solid var(--glow-yellow);">
+                <h2 style="color: var(--glow-yellow); margin-top:0;">🎉 THÀNH CÔNG!</h2>
+                <p style="font-size: 1.1rem; line-height: 1.6;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
+                <p style="font-size: 1.1rem; line-height: 1.6;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ. HỆ THỐNG SẼ SỚM CẬP NHẬT VỀ TRẠNG THÁI THANH TOÁN Ạ!</p>
             </div>
         </div>
 
