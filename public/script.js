@@ -21,10 +21,8 @@ function loadYoutube() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        console.log("Đang tải Config từ Google Sheet...");
         const res = await fetch('/api/config');
         configData = await res.json();
-        console.log("Dữ liệu lấy được:", configData);
         
         if (configData.error) {
             throw new Error(configData.error);
@@ -65,8 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             container.innerHTML = '<div style="color:var(--glow-yellow); text-align:center; width:100%; font-size:1.2rem;">Hiện chưa có đợt đăng ký nào.</div>';
         }
     } catch (err) {
-        console.error("Lỗi:", err);
-        document.getElementById('slot-container').innerHTML = `<div style="color:#FFCDD2; text-align:center; width:100%; background:rgba(211,47,47,0.8); padding:15px; border-radius:8px;"><b>Lỗi tải dữ liệu.</b><br>Chi tiết: ${err.message}<br>Vui lòng kiểm tra lại cấu trúc Sheet hoặc biến môi trường GCP.</div>`;
+        document.getElementById('slot-container').innerHTML = `<div style="color:#FFCDD2; text-align:center; width:100%; background:rgba(211,47,47,0.8); padding:15px; border-radius:8px;"><b>Lỗi tải dữ liệu.</b><br>Chi tiết: ${err.message}</div>`;
     }
 });
 
@@ -254,12 +251,12 @@ async function lookupBooking() {
         if (!data.isChecked) {
             statusHtml = `<div class="glass-box" style="background: rgba(255,235,59,0.2); border-color:#FBC02D; text-align:center;">
                 <h3 style="color:#FFC107; margin-top:0; font-size: 1.5rem;">⏳ ĐANG CHỜ ĐỐI SOÁT</h3>
-                <p style="margin-bottom:0; font-size: 1.1rem;">Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
+                <p style="margin-bottom:0; font-size: 1.1rem; text-align:center;">Dạ, đã nhận được đăng ký của <b>${data.firstName}</b> rồi ạ. Anh chị đợi BTC đối chiếu ngân hàng và cập nhật trạng thái nha.</p>
             </div>`;
         } else {
             statusHtml = `<div class="glass-box" style="background: rgba(76,175,80,0.2); border-color:#4CAF50; text-align:center;">
                 <h3 style="color:#4CAF50; margin-top:0; font-size: 1.5rem;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
-                <p style="font-size: 1.1rem;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
+                <p style="font-size: 1.1rem; text-align:center;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
             </div>`;
             createButterflies();
         }
