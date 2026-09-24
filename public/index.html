@@ -78,34 +78,7 @@
         .glass-box p { text-align: justify; }
         h2.section-title { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); text-transform: uppercase; text-align: center; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-bottom: 10px; margin-top: 0; font-size: 1.5rem; }
 
-        /* BỘ CSS 1: THÔNG TIN TRIP */
-        .grid-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; align-items: stretch; }
-        .info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; height: 100%; }
-        .info-card img { height: 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
         
-        .card-line1 { font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.2; width: 100%; margin-bottom: 5px; }
-        .card-line2 { font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.3; width: 100%; margin-bottom: 15px; }
-        /* TẠO ĐƯỜNG KẺ THẲNG TẮP BẰNG CÁCH ÉP CHIỀU CAO CỐ ĐỊNH TỪ DƯỚI LÊN */
-        .card-line3 { width: 100%; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; margin-top: auto; height: 140px; box-sizing: border-box; }
-
-        /* BỘ CSS 2: VẬT DỤNG CẦN THIẾT */
-        .vd-grid-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; align-items: stretch; }
-        .vd-info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; height: 100%; }
-        .vd-info-card img { height: 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
-        
-        .vd-card-line1 { font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.2; width: 100%; margin-bottom: 5px; }
-        .vd-card-line2 { font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.3; width: 100%; margin-bottom: 15px; }
-        /* Chiều cao 75px cho phần in nghiêng Vật Dụng để gióng đường kẻ ngang */
-        .vd-card-line3 { width: 100%; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; margin-top: auto; height: 75px; box-sizing: border-box; }
-
-        /* Thả tự do chiều cao trên mobile để không dư khoảng trắng */
-        @media (max-width: 900px) { 
-            .grid-cards, .vd-grid-cards { grid-template-columns: repeat(2, 1fr); } 
-            .card-line3, .vd-card-line3 { height: auto; }
-        }
-        @media (max-width: 480px) { 
-            .grid-cards, .vd-grid-cards { grid-template-columns: 1fr; } 
-        }
 
         /* TIMELINE */
         .timeline-item { padding: 15px; margin-bottom: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border-left: 4px solid var(--glow-yellow); transition: 0.3s; cursor: pointer; display: flex; align-items: center; font-size: 1.05rem; }
@@ -176,6 +149,131 @@
         
         .anim-firefly { position: fixed; background: #FFD700; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 15px 5px #FFD700; pointer-events: none; z-index: 9999; animation: flyRandom 5s linear forwards; }
         @keyframes flyRandom { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(calc(100vw * var(--dx)), calc(-100vh * var(--dy))) scale(0.5); opacity: 0; } }
+        /* ================================
+           CARD GRID - DÙNG CHUNG
+        ================================ */
+        
+        .grid-cards,
+        .vd-grid-cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            align-items: stretch;
+        }
+        
+        .info-card,
+        .vd-info-card {
+            background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%);
+            color: var(--bg-navy);
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        
+            box-sizing: border-box;
+            height: auto;
+            min-width: 0;
+        }
+        
+        .info-card img,
+        .vd-info-card img {
+            width: auto;
+            height: 45px;
+            flex: 0 0 45px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+        }
+        
+        /* Tiêu đề card */
+        .card-line1,
+        .vd-card-line1 {
+            width: 100%;
+            min-height: 2.4em;
+        
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        
+            font-family: 'Mulish', sans-serif;
+            font-weight: 900;
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            color: #000;
+            line-height: 1.2;
+            margin-bottom: 5px;
+        }
+        
+        /* Dòng thông tin phụ */
+        .card-line2,
+        .vd-card-line2 {
+            width: 100%;
+            min-height: 2.6em;
+        
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        
+            font-weight: 900;
+            font-size: 1.1rem;
+            color: #0B2B26;
+            text-transform: uppercase;
+            line-height: 1.3;
+            margin-bottom: 0;
+        }
+        
+        /* Nội dung mô tả */
+        .card-line3,
+        .vd-card-line3 {
+            width: 100%;
+            box-sizing: border-box;
+        
+            margin-top: 15px;
+            padding-top: 15px;
+        
+            border-top: 1px dashed rgba(0,0,0,0.25);
+        
+            font-size: 0.85rem;
+            font-style: italic;
+            line-height: 1.4;
+            color: #222;
+        }
+        
+        /* Chiều cao riêng cho hai nhóm card */
+        .card-line3 {
+            height: 140px;
+        }
+        
+        .vd-card-line3 {
+            height: 75px;
+        }
+        
+        /* Tablet */
+        @media (max-width: 900px) {
+            .grid-cards,
+            .vd-grid-cards {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        
+            .card-line3,
+            .vd-card-line3 {
+                height: auto;
+            }
+        }
+        
+        /* Mobile */
+        @media (max-width: 480px) {
+            .grid-cards,
+            .vd-grid-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
     </style>
 </head>
 <body>
@@ -278,7 +376,6 @@
                 <div class="vd-info-card"><img src="assets/images/giayvo.png"><div class="vd-card-line1">GIÀY BATA, VỚ CAO</div><div class="vd-card-line2"></div><div class="vd-card-line3">Tự tin sải bước</div></div>
                 <div class="vd-info-card"><img src="assets/images/sotay.png"><div class="vd-card-line1">SỔ TAY VÀ BÚT</div><div class="vd-card-line2"></div><div class="vd-card-line3">Ghi chép kiến thức thú vị</div></div>
                 <div class="vd-info-card"><img src="assets/images/balo.png"><div class="vd-card-line1">BALO GỌN NHẸ</div><div class="vd-card-line2"></div><div class="vd-card-line3">Chứa các vật dụng<br>cá nhân cần thiết</div></div>
-                
                 <div class="vd-info-card"><img src="assets/images/binhnuoc.png"><div class="vd-card-line1">BÌNH NƯỚC</div><div class="vd-card-line2"></div><div class="vd-card-line3">Tối thiểu 500ml (*)</div></div>
                 <div class="vd-info-card"><img src="assets/images/aomua.png"><div class="vd-card-line1">ÁO MƯA</div><div class="vd-card-line2"></div><div class="vd-card-line3">Dự phòng mưa bất chợt (*)</div></div>
                 <div class="vd-info-card"><img src="assets/images/headlamp.png"><div class="vd-card-line1">ĐÈN PIN ĐEO ĐẦU</div><div class="vd-card-line2"></div><div class="vd-card-line3">Soi đường và quan sát (*)</div></div>
