@@ -40,7 +40,6 @@
         .header-logo img.logo { height: 50px; }
         .header-logo img.title { width: 50%; min-width: 280px; margin-top: 10px; filter: drop-shadow(0 -10px 40px rgba(255,215,0,0.9)) drop-shadow(0 0 20px rgba(255,215,0,0.6)); }
 
-        /* MENU BAR */
         .main-nav-wrapper { position: sticky; top: 10px; z-index: 100; margin-bottom: 20px; }
         .main-nav { 
             display: flex; justify-content: center; gap: 8px;
@@ -140,13 +139,7 @@
         .mobile-footer-content { display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; width: 100%; }
         @media (max-width: 768px) { .desktop-floats { display: none; } .mobile-footer { display: block; } }
 
-        /* TÙY CHỈNH LẠI HIỆU ỨNG BƯỚM NỔ RA TỪ TRUNG TÂM */
-        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: explodeOut 4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        @keyframes explodeOut { 
-            0% { transform: translate(0, 0) scale(0.5); opacity: 1; } 
-            100% { transform: translate(var(--dx), var(--dy)) scale(1.5) rotate(360deg); opacity: 0; } 
-        }
-        
+        /* Bỏ CSS phức tạp, Đom đóm dùng CSS cũ, Bướm nổ sẽ xử lý bằng Javascript 100% để đảm bảo tương thích */
         .anim-firefly { position: fixed; background: #FFD700; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 15px 5px #FFD700; pointer-events: none; z-index: 9999; animation: flyRandom 5s linear forwards; }
         @keyframes flyRandom { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(calc(100vw * var(--dx)), calc(-100vh * var(--dy))) scale(0.5); opacity: 0; } }
 
@@ -305,7 +298,6 @@
 
             <!-- PAYMENT BOX NỀN TRẮNG 60% -->
             <div id="paymentBox" class="payment-box">
-                <!-- Đổi Icon Đồng hồ cát -->
                 <h2 style="color: #0F5132; margin-top:0; text-align:center; display: flex; justify-content: center; align-items: center; gap: 8px;">
                     <img src="assets/images/donghocat.png" style="width: 28px;"> VUI LÒNG HOÀN TẤT TRONG:
                 </h2>
@@ -313,7 +305,6 @@
                 
                 <div class="payment-flex">
                     <div class="payment-info">
-                        <!-- Icon Cost cho Tổng tiền -->
                         <p style="font-size: 1.1rem; margin-top:0; display:flex; align-items:center; gap:8px;">
                             <img src="assets/images/cost.png" style="width:24px; filter:invert(1);">
                             <b>Tổng tiền:</b> <span id="payTotalAmount" style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;"></span>
@@ -332,11 +323,11 @@
                 <button class="btn-primary" id="btnSubmitFinal" onclick="submitFinalRegistration()">XÁC NHẬN ĐÃ CHUYỂN KHOẢN</button>
             </div>
 
-            <!-- BOX SUCCESS: Text Align Center và Button ĐĂNG KÝ ĐỢT KHÁC -->
+            <!-- BOX SUCCESS: Text Align Center !important và Nút Reset -->
             <div id="submitSuccessBox" class="glass-box" style="display: none; background: rgba(25, 135, 84, 0.9); text-align: center; border: 2px solid var(--glow-yellow);">
                 <h2 style="color: var(--glow-yellow); margin-top:0;">🎉 THÀNH CÔNG!</h2>
-                <p style="font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
-                <p style="font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ. HỆ THỐNG SẼ SỚM CẬP NHẬT VỀ TRẠNG THÁI THANH TOÁN Ạ!</p>
+                <p style="text-align: center !important; font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
+                <p style="text-align: center !important; font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ. HỆ THỐNG SẼ SỚM CẬP NHẬT VỀ TRẠNG THÁI THANH TOÁN Ạ!</p>
                 <button class="btn-primary" style="width: auto; padding: 10px 30px; margin-top: 15px;" onclick="resetRegistrationForm()">ĐĂNG KÝ ĐỢT KHÁC</button>
             </div>
         </div>
@@ -382,6 +373,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- ĐỔI ĐUÔI ?v=999 ĐỂ ÉP TRÌNH DUYỆT TẢI LẠI JS MỚI NHẤT, KHÔNG XÀI BẢN CACHE CŨ -->
+    <script src="script.js?v=999"></script>
 </body>
 </html>
