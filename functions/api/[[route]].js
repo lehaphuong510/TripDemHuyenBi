@@ -108,7 +108,6 @@ export async function onRequest(context) {
       let bookingId = matched[0][9];
       let matchedDot = matched[0][6];
       
-      // Bốc dữ liệu Shortlist
       const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const shortData = await resShort.json();
       let isChecked = false;
@@ -121,7 +120,6 @@ export async function onRequest(context) {
           }
       }
 
-      // Bốc Zalo Link từ Config
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
       const configHeaders = dataConfig.values[0].map(h => h ? h.toString().trim() : "");
@@ -156,7 +154,11 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '').replace(/[^A-Za-z0-9+/=]/g, '');     
+  // FIX ATOB: Lọc xóa MỌI KÝ TỰ (bao gồm khoảng trắng, xuống dòng \n \r, gạch ngang) chỉ giữ đúng [A-Za-z0-9+/=]
+  let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '');
+  base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
+  
+  // Bù cho đủ chiều dài chia hết 4
   while (base64Key.length % 4 !== 0) { base64Key += '='; }
 
   const binaryDer = new Uint8Array(atob(base64Key).length);
