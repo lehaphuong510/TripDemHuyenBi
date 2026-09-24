@@ -24,9 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const res = await fetch('/api/config');
         configData = await res.json();
         
-        if (configData.error) {
-            throw new Error(configData.error);
-        }
+        if (configData.error) throw new Error(configData.error);
 
         const costVal = Number(configData.fixedCost) || 0;
         const schemeVal = Number(configData.schemeKhuyenMai) || 0;
