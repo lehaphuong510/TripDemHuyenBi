@@ -22,13 +22,11 @@ export async function onRequest(context) {
       
       if(idxTenDot === -1 || idxGioiHan === -1) throw new Error("Không tìm thấy cột 'Nội dung option' hoặc 'SL giới hạn'. Hãy kiểm tra chính tả dòng 1 tab Config.");
 
-      // Hàm ép kiểu và làm sạch dữ liệu (chỉ lấy số, bỏ qua chấm/phẩy/chữ)
       const parseNumber = (val) => {
           if (!val) return 0;
           return parseInt(String(val).replace(/[^\d]/g, '')) || 0;
       };
 
-      // Đọc row 2 (index 1), cẩn thận trường hợp Google Sheet cắt ô trống
       const row2 = dataConfig.values[1] || [];
       const fixedCost = parseNumber(row2[idxCost]);
       const slKhuyenMai = parseNumber(row2[idxSLKM]);
@@ -116,6 +114,7 @@ export async function onRequest(context) {
       }
 
       let rawName = matched[0][2] || "Anh/Chị";
+      // Xử lý xưng hô thông minh: Nếu có dấu gạch ngang thì lấy phần trước, nếu không thì lấy cả cụm, sau đó bóc chữ cuối cùng
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
       let ds_nguoi = matched.map(r => ({ name: r[2], yob: r[3] }));
 
@@ -133,7 +132,13 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const now = Math.floor(Date.now() / 1000);
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
-  const pemContents = privateKey.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "").replace(/\s/g, "");
+  
+  // Nâng cấp: Xóa bỏ triệt để mọi khoảng trắng, ký tự xuống dòng (\n, \r) khỏi private_key
+  const pemContents = privateKey
+      .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+      .replace(/-----END PRIVATE KEY-----/g, "")
+      .replace(/\s+/g, "");
+
   const binaryDer = new Uint8Array(atob(pemContents).length);
   for (let i = 0; i < atob(pemContents).length; i++) binaryDer[i] = atob(pemContents).charCodeAt(i);
   const key = await crypto.subtle.importKey("pkcs8", binaryDer.buffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
