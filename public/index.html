@@ -23,14 +23,14 @@
             background: var(--bg-navy) url('assets/images/Backgroundweb.webp') no-repeat center center fixed;
             background-size: cover;
             color: var(--text-main);
-            margin: 0; padding: 0; padding-bottom: 25vh; 
+            margin: 0; padding: 0; padding-bottom: 5vh; 
         }
 
         @media (max-width: 640px) {
-            body { background-image: url('assets/images/Backgroundmobile.webp'); }
+            body { background-image: url('assets/images/Backgroundmobile.webp'); padding-bottom: 80px; }
         }
 
-        /* Hiệu ứng đom đóm (bay & chớp tắt) */
+        /* Đom đóm */
         .firefly { position: fixed; background: var(--glow-yellow); width: 4px; height: 4px; border-radius: 50%; box-shadow: 0 0 12px 3px var(--glow-yellow); animation: float 4s infinite ease-in-out; pointer-events: none; z-index: 0; }
         .firefly-blink { position: fixed; background: var(--glow-yellow); width: 5px; height: 5px; border-radius: 50%; box-shadow: 0 0 15px 5px var(--glow-yellow); animation: blink 2.5s infinite ease-in-out alternate; pointer-events: none; z-index: 0; }
         @keyframes float { 0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; } 50% { transform: translateY(-30px) translateX(15px); opacity: 1; } }
@@ -38,13 +38,9 @@
 
         .container { max-width: 950px; margin: 0 auto; padding: 15px; position: relative; z-index: 10; }
 
-        /* Tăng size Title và Ánh sáng vàng */
         .header-logo { text-align: center; margin-bottom: 10px; position: relative; }
         .header-logo img.logo { height: 50px; }
-        .header-logo img.title { 
-            width: 50%; min-width: 280px; margin-top: 10px;
-            filter: drop-shadow(0 -10px 40px rgba(255,215,0,0.9)) drop-shadow(0 0 20px rgba(255,215,0,0.6)); 
-        }
+        .header-logo img.title { width: 50%; min-width: 280px; margin-top: 10px; filter: drop-shadow(0 -10px 40px rgba(255,215,0,0.9)) drop-shadow(0 0 20px rgba(255,215,0,0.6)); }
         @media (max-width: 640px) { .header-logo img.title { width: 60%; } }
 
         /* MENU BAR STICKY */
@@ -60,51 +56,43 @@
             cursor: pointer; transition: 0.3s; text-transform: uppercase;
             display: flex; align-items: center; justify-content: center;
         }
-        .main-nav button:hover, .main-nav button.active { 
-            color: var(--glow-yellow); text-shadow: 0 0 10px var(--glow-yellow); font-weight: 900;
-        }
+        .main-nav button:hover, .main-nav button.active { color: var(--glow-yellow); text-shadow: 0 0 10px var(--glow-yellow); font-weight: 900; }
         
-        /* Hiệu ứng quét sáng cho nút ĐĂNG KÝ */
-        .btn-sweep { position: relative; overflow: hidden; color: var(--glow-yellow) !important; text-shadow: 0 0 8px rgba(255,215,0,0.5); }
-        .btn-sweep::after {
-            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
-            animation: sweep 2.5s infinite;
+        /* Hiệu ứng nhấp nháy cho nút ĐĂNG KÝ */
+        .btn-pulse { color: white; animation: pulseGlow 2s infinite alternate; }
+        @keyframes pulseGlow { 
+            0% { text-shadow: 0 0 5px rgba(255,215,0,0.5); } 
+            100% { color: var(--glow-yellow); text-shadow: 0 0 15px var(--glow-yellow), 0 0 5px var(--glow-yellow); } 
         }
-        @keyframes sweep { 0% { left: -100%; } 50% { left: 200%; } 100% { left: 200%; } }
-        .btn-sweep img { width: 28px; filter: drop-shadow(0 0 8px var(--glow-yellow)); margin-left: 2px; }
+        .btn-pulse img { width: 28px; filter: drop-shadow(0 0 8px var(--glow-yellow)); margin-left: 5px; }
 
-        /* Xử lý rớt dòng Menu Mobile */
         .mobile-br { display: none; }
-        .space-pc { display: inline; }
         @media (max-width: 640px) { 
-            .main-nav { display: flex; flex-wrap: nowrap; border-radius: 16px; gap: 2px; padding: 6px; }
-            .main-nav button { font-size: 0.8rem; padding: 8px 2px; flex-direction: column; line-height: 1.2; }
+            .main-nav { display: grid; grid-template-columns: 1fr 1fr; border-radius: 16px; gap: 5px; padding: 6px; }
+            .main-nav button { font-size: 0.85rem; padding: 8px 2px; flex-direction: column; line-height: 1.2; }
             .mobile-br { display: block; }
-            .space-pc { display: none; }
-            .btn-sweep img { width: 20px; position: absolute; top: -5px; right: -5px; } /* Đẩy bướm gọn lại trên mobile */
+            .btn-pulse img { width: 20px; margin-left: 0; margin-top: 2px; }
         }
 
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Căn đều 2 bên đoạn văn */
         .glass-box { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); line-height: 1.6; font-size: 1.05rem; }
         .glass-box p { text-align: justify; }
         h2.section-title { font-family: 'Mulish', sans-serif; color: var(--glow-yellow); text-transform: uppercase; text-align: center; border-bottom: 2px dashed rgba(255,215,0,0.3); padding-bottom: 10px; margin-top: 0; font-size: 1.5rem; }
 
-        /* FLEX CARDS 4 CỘT (Căn ngang bằng nhau) */
-        .flex-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
-        .info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: calc(25% - 15px); min-width: 210px; display: flex; flex-direction: column; align-items: center; }
-        .info-card img { height: 50px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        /* GRID CARDS 4 CỘT CỐ ĐỊNH */
+        .grid-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; align-items: stretch; }
+        .info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
+        .info-card img { height: 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
         
-        .card-line1 { font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; color: #000; line-height: 1.3; width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; }
-        .card-line2 { font-weight: 900; font-size: 1.1rem; color: #0B2B26; text-transform: uppercase; line-height: 1.3; width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; }
-        .card-line3 { font-size: 0.9rem; font-style: italic; line-height: 1.4; color: #222; margin-top: auto; padding-top: 15px; width: 100%; }
+        .card-line1 { font-family: 'Mulish', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; color: #000; line-height: 1.3; width: 100%; min-height: 45px; display: flex; align-items: center; justify-content: center; }
+        .card-line2 { font-weight: 900; font-size: 1.05rem; color: #0B2B26; text-transform: uppercase; line-height: 1.3; width: 100%; min-height: 45px; display: flex; align-items: center; justify-content: center; margin-top: 5px; }
+        .card-line3 { font-size: 0.85rem; font-style: italic; line-height: 1.4; color: #222; margin-top: auto; padding-top: 15px; width: 100%; }
 
-        @media (max-width: 900px) { .info-card { width: calc(50% - 15px); } }
-        @media (max-width: 480px) { .info-card { width: 100%; } }
+        @media (max-width: 900px) { .grid-cards { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .grid-cards { grid-template-columns: 1fr; } }
 
         /* LỊCH TRÌNH TIMELINE */
         .timeline-item { padding: 15px; margin-bottom: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; border-left: 4px solid var(--glow-yellow); transition: 0.3s; cursor: pointer; display: flex; align-items: center; font-size: 1.05rem; }
@@ -115,7 +103,6 @@
 
         .slot-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; }
         .slot-card { background: rgba(25, 135, 84, 0.9); border: 2px solid #4CAF50; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; width: calc(50% - 15px); min-width: 250px; box-sizing: border-box; }
-        .slot-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); }
         .slot-card.selected { background: #0F5132; border-color: var(--glow-yellow); box-shadow: 0 0 15px rgba(255,215,0,0.5); }
         .slot-card h3 { margin: 0 0 10px 0; font-family: 'Mulish'; color: white; font-size: 1.2rem; }
         .slot-breakdown { display: flex; justify-content: space-between; font-size: 0.9rem; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; }
@@ -123,45 +110,48 @@
 
         input[type="text"], input[type="number"], input[type="tel"] { width: 100%; padding: 14px; background: rgba(255,255,255,0.95); border: none; border-radius: 8px; font-family: 'Quicksand'; font-weight: bold; color: #333; margin-top: 5px; box-sizing: border-box; font-size: 1rem; }
         
-        .btn-primary { background: linear-gradient(135deg, #198754 0%, #0F5132 100%); color: white; border: 1px solid #4CAF50; padding: 12px 15px; width: 100%; border-radius: 8px; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; margin-top: 15px; display: flex; align-items: center; justify-content: center; }
+        .btn-primary { background: linear-gradient(135deg, #198754 0%, #0F5132 100%); color: white; border: 1px solid #4CAF50; padding: 12px 15px; width: 100%; border-radius: 8px; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; margin-top: 15px; }
         .btn-primary:hover { transform: scale(1.02); filter: brightness(1.2); }
-        
-        /* Nút Tra cứu */
-        .btn-search { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #091221; font-family: 'Mulish'; font-weight: 900; font-size: 1.3rem; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; }
-        .btn-search:hover { box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1.02); }
-        .btn-search img { width: 42px; } /* Phóng to gấp rưỡi */
 
         .payment-box { background: rgba(255,255,255,0.95); color: #000; padding: 25px; border-radius: 12px; text-align: center; border: 3px dashed #198754; display: none; }
         .timer { font-family: 'Mulish'; font-size: 2.5rem; color: #D32F2F; font-weight: 900; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* FOOTER TRÀN MÀN HÌNH MÀU SOLID */
-        .site-footer { 
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #0B2B26; border-top: 2px solid var(--glass-border); 
-            padding: 10px 0; display: flex; align-items: center; justify-content: center; gap: 15px; 
-            z-index: 100; flex-wrap: wrap; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-        .footer-text { font-family: 'Mulish'; font-weight: 900; font-size: 0.95rem; color: var(--glow-yellow); text-transform: uppercase; letter-spacing: 0.5px; }
-        .site-footer img { width: 35px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
-        .site-footer img:hover { transform: translateY(-4px) scale(1.1); filter: drop-shadow(0 4px 8px var(--glow-yellow)); }
-
-        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: flyUp 4s linear forwards; }
-        @keyframes flyUp { 0% { transform: translateY(100vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } }
-
-        .lookup-flex { display: flex; gap: 15px; align-items: center; justify-content: center; margin-top: 15px;}
+        /* TRA CỨU */
+        .lookup-flex { display: flex; gap: 15px; align-items: stretch; justify-content: center; margin-top: 15px;}
         .lookup-flex .form-group { flex: 1; max-width: 350px; margin: 0; }
+        .btn-search { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #091221; font-family: 'Mulish'; font-weight: 900; font-size: 1.2rem; border: none; padding: 0 25px; border-radius: 8px; cursor: pointer; transition: 0.3s; text-transform: uppercase; height: 100%; display: flex; align-items: center; }
+        .btn-search:hover { box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1.02); }
+        .search-icon-img { width: 50px; margin-left: 5px; }
+
         @media (max-width: 640px) { 
-            .lookup-flex { flex-direction: column; width: 100%; } 
-            .lookup-flex .form-group { width: 100%; max-width: 100%; }
-            .lookup-flex .form-group input { width: 90%; margin: 0 auto; display: block; }
-            .lookup-flex .btn-search { width: 60%; max-width: 250px; margin: 0 auto; }
+            .lookup-flex { flex-direction: column; width: 100%; align-items: center; } 
+            .lookup-flex .form-group { width: 90%; max-width: 100%; }
+            .lookup-flex .form-group input { width: 100%; display: block; }
+            .lookup-action { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+            .btn-search { padding: 12px 25px; }
+            .search-icon-img { width: 45px; margin-left: 0; }
             .lookup-title { font-size: 1.1rem !important; }
+        }
+
+        /* 2 CỤM FLOATING CHO LAPTOP */
+        .desktop-floats { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
+        .float-box { background: rgba(11, 43, 38, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        .float-text { font-family: 'Mulish'; font-size: 0.8rem; color: var(--glow-yellow); text-align: center; font-weight: 900; text-transform: uppercase; line-height: 1.2; }
+        .float-box img { width: 35px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
+        .float-box img:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 4px 8px var(--glow-yellow)); }
+        
+        /* FOOTER CHO MOBILE */
+        .mobile-footer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(11, 43, 38, 0.95); padding: 10px 0; z-index: 100; border-top: 1px solid var(--glass-border); }
+        .mobile-footer-content { display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; width: 100%; }
+        
+        @media (max-width: 768px) {
+            .desktop-floats { display: none; }
+            .mobile-footer { display: block; }
         }
     </style>
 </head>
 <body>
-    <!-- Rải đom đóm (kết hợp tĩnh lơ lửng và chớp tắt) -->
     <div class="firefly" style="top:15%; left:20%;"></div>
     <div class="firefly-blink" style="top:10%; left:40%; animation-delay: 0.5s;"></div>
     <div class="firefly" style="top:25%; left:75%;"></div>
@@ -181,12 +171,12 @@
 
         <div class="main-nav-wrapper">
             <div class="main-nav">
-                <button class="active" onclick="switchTab('tab-gioithieu')">GIỚI<span class="space-pc"> </span><br class="mobile-br">THIỆU</button>
-                <button onclick="switchTab('tab-lichtrinh')">LỊCH<span class="space-pc"> </span><br class="mobile-br">TRÌNH</button>
-                <button class="btn-sweep" onclick="switchTab('tab-dangky')">
-                    ĐĂNG<span class="space-pc"> </span><br class="mobile-br">KÝ <img src="assets/images/butterfly.png" alt="glow">
+                <button class="active" onclick="switchTab('tab-gioithieu')">GIỚI&nbsp;<br class="mobile-br">THIỆU</button>
+                <button onclick="switchTab('tab-lichtrinh')">LỊCH&nbsp;<br class="mobile-br">TRÌNH</button>
+                <button class="btn-pulse" onclick="switchTab('tab-dangky')">
+                    ĐĂNG&nbsp;<br class="mobile-br">KÝ <img src="assets/images/butterfly.png" alt="glow">
                 </button>
-                <button onclick="switchTab('tab-tracuu')">TRA<span class="space-pc"> </span><br class="mobile-br">CỨU</button>
+                <button onclick="switchTab('tab-tracuu')">TRA&nbsp;<br class="mobile-br">CỨU</button>
             </div>
         </div>
 
@@ -199,7 +189,7 @@
             </div>
 
             <h2 class="section-title">THÔNG TIN TRIP</h2>
-            <div class="flex-cards">
+            <div class="grid-cards">
                 <div class="info-card">
                     <img src="assets/images/age.png">
                     <div class="card-line1">ĐỘ TUỔI</div>
@@ -252,7 +242,7 @@
             </div>
 
             <h2 class="section-title">VẬT DỤNG CẦN THIẾT</h2>
-            <div class="flex-cards">
+            <div class="grid-cards">
                 <div class="info-card"><img src="assets/images/aoquan.png"><div class="card-line1">ÁO QUẦN DÀI</div><div class="card-line2"></div><div class="card-line3">Che chắn khỏi cây gai,<br>côn trùng đốt</div></div>
                 <div class="info-card"><img src="assets/images/giayvo.png"><div class="card-line1">GIÀY BATA, VỚ CAO</div><div class="card-line2"></div><div class="card-line3">Tự tin sải bước</div></div>
                 <div class="info-card"><img src="assets/images/sotay.png"><div class="card-line1">SỔ TAY VÀ BÚT</div><div class="card-line2"></div><div class="card-line3">Ghi chép kiến thức thú vị</div></div>
@@ -324,23 +314,40 @@
                     <div class="form-group">
                         <input type="tel" id="lookupPhone" placeholder="Ví dụ: 0902800318">
                     </div>
-                    <button class="btn-search" onclick="lookupBooking()">
-                        TRA CỨU <img src="assets/images/kinhlup.png">
-                    </button>
+                    <div class="lookup-action">
+                        <button class="btn-search" onclick="lookupBooking()">TRA CỨU</button>
+                        <img src="assets/images/kinhlup.png" class="search-icon-img" onclick="lookupBooking()" style="cursor:pointer;">
+                    </div>
                 </div>
             </div>
             <div id="lookupResult"></div>
         </div>
     </div>
 
-    <!-- FOOTER MỚI CỐ ĐỊNH -->
-    <footer class="site-footer">
-        <span class="footer-text">THÔNG TIN LIÊN HỆ:</span>
-        <a href="https://facebook.com/natureandme.vn" target="_blank"><img src="assets/images/FB.png" alt="Facebook"></a>
-        <a href="https://zalo.me/0902800318" target="_blank"><img src="assets/images/call.png" alt="Zalo/Call"></a>
-        <span class="footer-text" style="margin-left: 10px;">FOR ADMIN:</span>
-        <img src="assets/images/admin.png" alt="Admin" onclick="alert('Đang phát triển tính năng Admin!')">
-    </footer>
+    <!-- 2 CỤM FLOATING CHO LAPTOP -->
+    <div class="desktop-floats">
+        <div class="float-box">
+            <span class="float-text">Liên<br>hệ:</span>
+            <a href="https://facebook.com/natureandme.vn" target="_blank"><img src="assets/images/FB.png" alt="Facebook"></a>
+            <a href="https://zalo.me/0902800318" target="_blank"><img src="assets/images/call.png" alt="Call"></a>
+        </div>
+        <div class="float-box">
+            <span class="float-text">Admin</span>
+            <img src="assets/images/admin.png" alt="Admin" onclick="alert('Đang phát triển tính năng Admin!')">
+        </div>
+    </div>
+
+    <!-- FOOTER CHO MOBILE -->
+    <div class="mobile-footer">
+        <div class="mobile-footer-content">
+            <span class="footer-text" style="color:var(--glow-yellow); font-weight:bold; font-size:0.85rem;">LIÊN HỆ:</span>
+            <a href="https://facebook.com/natureandme.vn" target="_blank"><img src="assets/images/FB.png" style="width:28px;"></a>
+            <a href="https://zalo.me/0902800318" target="_blank"><img src="assets/images/call.png" style="width:28px;"></a>
+            <span style="color:rgba(255,255,255,0.3);">|</span>
+            <span class="footer-text" style="color:var(--glow-yellow); font-weight:bold; font-size:0.85rem;">ADMIN:</span>
+            <img src="assets/images/admin.png" style="width:28px; cursor:pointer;" onclick="alert('Đang phát triển Admin!')">
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
