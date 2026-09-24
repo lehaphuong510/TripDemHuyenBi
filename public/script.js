@@ -221,7 +221,7 @@ async function submitFinalRegistration() {
                 successBox.style.display = 'block';
                 document.getElementById('successBookingId').innerText = submitData.bookingId;
                 createButterflies(); 
-                successBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Trượt màn hình ngay lập tức
+                successBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Trượt màn hình đến giữa
             }
         } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
     } catch (err) { alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
