@@ -217,9 +217,11 @@ async function submitFinalRegistration() {
             if (submitData.success) {
                 clearInterval(timerInterval);
                 document.getElementById('paymentBox').style.display = 'none';
-                document.getElementById('submitSuccessBox').style.display = 'block';
+                let successBox = document.getElementById('submitSuccessBox');
+                successBox.style.display = 'block';
                 document.getElementById('successBookingId').innerText = submitData.bookingId;
                 createButterflies(); 
+                successBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Trượt màn hình ngay lập tức
             }
         } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
     } catch (err) { alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
@@ -238,8 +240,8 @@ async function lookupBooking() {
         
         if (!data.success) { resultDiv.innerHTML = `<div class="glass-box" style="color:var(--glow-yellow); border-color:#f44336; text-align:center;">${data.message}</div>`; return; }
 
-        let dsHtml = `<table class="result-table"><tr><th>Họ và Tên</th><th>Năm sinh</th></tr>`;
-        data.ds_nguoi.forEach(ng => { dsHtml += `<tr><td><b>${ng.name}</b></td><td style="text-align:center;">${ng.yob}</td></tr>`; });
+        let dsHtml = `<table class="result-table"><tr><th style="text-align:left;">HỌ VÀ TÊN</th><th style="text-align:center;">NĂM SINH</th></tr>`;
+        data.ds_nguoi.forEach(ng => { dsHtml += `<tr><td style="text-align:left;"><b>${ng.name}</b></td><td style="text-align:center;">${ng.yob}</td></tr>`; });
         dsHtml += `</table>`;
 
         let statusHtml = "";
@@ -255,12 +257,17 @@ async function lookupBooking() {
         } else {
             statusHtml = `
                 <div style="text-align:center; padding-bottom:15px; margin-bottom:15px; border-bottom:1px dashed rgba(255,255,255,0.2);">
-                    <h3 style="color:var(--glow-cyan); margin-top:0; font-size: 1.5rem;">✅ CHỐT ĐƠN THÀNH CÔNG</h3>
+                    <h3 style="color:var(--glow-cyan); margin-top:0; font-size: 1.5rem;">
+                        <img src="assets/images/tick.png" style="width:24px; vertical-align:middle; margin-right:5px;"> CHỐT ĐƠN THÀNH CÔNG
+                    </h3>
                     <p style="font-size: 1.1rem; margin:0;">🎉 Chúc mừng <b>${data.firstName}</b> đã chốt đơn thành công! Cảm ơn anh chị đã quan tâm và đăng ký tham gia chương trình.</p>
                 </div>
-                <div style="background:rgba(25,135,84,0.3); padding:10px; border-radius:8px; border:1px solid #198754; margin-bottom:15px;">
-                    ✅ BTC đã nhận được thanh toán:<br>
-                    Tổng số tiền đã nhận: <span style="color:var(--glow-yellow); font-weight:900; font-size:1.2rem;">${data.totalMoney ? data.totalMoney.toLocaleString('vi-VN') : 0} VNĐ</span>
+                <div style="background:rgba(25,135,84,0.3); padding:15px; border-radius:8px; border:1px solid #198754; margin-bottom:15px; display:flex; flex-direction:column; align-items:center; gap:5px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="assets/images/tick.png" style="width:20px;"> 
+                        <span>BTC đã nhận được thanh toán:</span>
+                    </div>
+                    <div>Tổng số tiền đã nhận: <span style="color:var(--glow-yellow); font-weight:900; font-size:1.2rem;">${data.totalMoney ? data.totalMoney.toLocaleString('vi-VN') : 0} VNĐ</span></div>
                 </div>
             `;
             if (data.zaloLink) {
@@ -277,11 +284,11 @@ async function lookupBooking() {
         resultDiv.innerHTML = `
             <div class="glass-box" style="text-align:center;">
                 ${statusHtml}
-                <div style="text-align:left; background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-top:10px;">
-                    <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:10px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
-                    Đợt tham gia: <b style="color:white;">${data.dot}</b><br>
-                    SĐT người đại diện: <b style="color:white;">${data.phoneDisplay}</b><br>
-                    Tổng số lượng: <b style="color:white;">${data.sl} người</b>
+                <div style="text-align:left; background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-top:10px; border: 1px solid var(--glass-border);">
+                    <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:15px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
+                    <div style="margin-bottom:5px;">Đợt tham gia: <b style="color:var(--text-main); font-size:1.1rem;">${data.dot}</b></div>
+                    <div style="margin-bottom:5px;">SĐT người đại diện: <b style="color:var(--text-main); font-size:1.1rem;">${data.phoneDisplay}</b></div>
+                    <div style="margin-bottom:15px;">Tổng số lượng: <b style="color:var(--glow-yellow); font-size:1.1rem;">${data.sl} người</b></div>
                     ${dsHtml}
                 </div>
                 ${zaloHtml}
