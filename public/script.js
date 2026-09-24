@@ -19,23 +19,29 @@ function loadYoutube() {
     container.innerHTML = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/AqoJWlIdqng?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 12px;"></iframe>`;
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+// Bóc API Tải thẻ vào hàm riêng để tái sử dụng
+async function loadSlots(isInit = false) {
+    const container = document.getElementById('slot-container');
+    if(isInit) {
+        container.innerHTML = '<div style="text-align:center; width:100%; font-size: 1.2rem;">Đang tải dữ liệu đợt tham gia... ⏳</div>';
+    }
+    
     try {
         const res = await fetch('/api/config');
         configData = await res.json();
-        
         if (configData.error) throw new Error(configData.error);
 
-        const costVal = Number(configData.fixedCost) || 0;
-        const schemeVal = Number(configData.schemeKhuyenMai) || 0;
-        const discountVal = costVal - schemeVal;
+        if(isInit) {
+            const costVal = Number(configData.fixedCost) || 0;
+            const schemeVal = Number(configData.schemeKhuyenMai) || 0;
+            const discountVal = costVal - schemeVal;
+            document.getElementById('display-cost').innerText = costVal.toLocaleString('vi-VN');
+            document.getElementById('display-slkm').innerText = configData.slKhuyenMai || 0;
+            document.getElementById('display-discount').innerText = discountVal.toLocaleString('vi-VN');
+        }
 
-        document.getElementById('display-cost').innerText = costVal.toLocaleString('vi-VN');
-        document.getElementById('display-slkm').innerText = configData.slKhuyenMai || 0;
-        document.getElementById('display-discount').innerText = discountVal.toLocaleString('vi-VN');
-
-        const container = document.getElementById('slot-container');
         container.innerHTML = '';
+        const currentSelected = document.getElementById('selectedDot').value;
         
         if (configData.options && configData.options.length > 0) {
             configData.options.forEach(opt => {
@@ -46,6 +52,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const card = document.createElement('div');
                 card.className = 'slot-card';
+                if(currentSelected === opt.name) {
+                    card.classList.add('selected');
+                    document.getElementById('selectedDotMax').value = available;
+                }
                 card.onclick = () => selectSlot(card, opt.name, available);
                 card.innerHTML = `
                     <h3>${opt.name}</h3>
@@ -61,8 +71,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             container.innerHTML = '<div style="color:var(--glow-yellow); text-align:center; width:100%; font-size:1.2rem;">Hiện chưa có đợt đăng ký nào.</div>';
         }
     } catch (err) {
-        document.getElementById('slot-container').innerHTML = `<div style="color:#FFCDD2; text-align:center; width:100%; background:rgba(211,47,47,0.8); padding:15px; border-radius:8px;"><b>Lỗi tải dữ liệu.</b><br>Chi tiết: ${err.message}</div>`;
+        container.innerHTML = `<div style="color:#FFCDD2; text-align:center; width:100%; background:rgba(211,47,47,0.8); padding:15px; border-radius:8px;"><b>Lỗi tải dữ liệu.</b><br>Chi tiết: ${err.message}</div>`;
     }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadSlots(true);
 });
 
 function selectSlot(cardEl, dotName, available) {
@@ -148,6 +162,9 @@ async function holdSlotAndPay() {
             document.getElementById('paySyntax').innerText = `Tripdem ${cleanName} ${phone}`;
             
             startCountdown(15 * 60);
+            
+            // Cập nhật lại số Đang Giao Dịch realtime
+            await loadSlots();
         } else {
             alert(data.message || "Lỗi giữ chỗ, có thể người khác vừa đăng ký suất cuối cùng!");
             btn.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; btn.disabled = false;
@@ -217,14 +234,49 @@ async function submitFinalRegistration() {
             if (submitData.success) {
                 clearInterval(timerInterval);
                 document.getElementById('paymentBox').style.display = 'none';
+                
                 let successBox = document.getElementById('submitSuccessBox');
                 successBox.style.display = 'block';
                 document.getElementById('successBookingId').innerText = submitData.bookingId;
+                
+                // Trượt mượt mà tập trung vào Box Thành Công
+                successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 createButterflies(); 
-                successBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Trượt màn hình đến giữa
+                
+                // Cập nhật lại số Đã Đăng Ký realtime
+                await loadSlots();
             }
         } else { alert("Lỗi tải ảnh!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
     } catch (err) { alert("Lỗi mạng!"); btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; btnSubmit.disabled = false; }
+}
+
+// Nút Đăng Ký Đợt Khác (Reset Form)
+function resetRegistrationForm() {
+    document.getElementById('submitSuccessBox').style.display = 'none';
+    document.getElementById('registrationForm').style.display = 'none';
+    document.getElementById('agreeCheckbox').checked = false;
+    
+    document.getElementById('numPeople').value = 1;
+    document.getElementById('phoneInput').value = '';
+    document.getElementById('phoneBackup').value = '';
+    document.getElementById('billUpload').value = '';
+    document.getElementById('participantsList').innerHTML = '';
+    
+    document.getElementById('selectedDot').value = '';
+    document.getElementById('selectedDotMax').value = '';
+    
+    const btnHold = document.getElementById('btnHold');
+    btnHold.innerHTML = "TIẾP TỤC THANH TOÁN 🚀"; 
+    btnHold.disabled = false;
+    
+    const btnSubmit = document.getElementById('btnSubmitFinal');
+    btnSubmit.innerHTML = "XÁC NHẬN ĐÃ CHUYỂN KHOẢN"; 
+    btnSubmit.disabled = false;
+    
+    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+    
+    loadSlots();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function lookupBooking() {
@@ -297,16 +349,24 @@ async function lookupBooking() {
     } catch (err) { resultDiv.innerHTML = `<div class="glass-box" style="color:red; text-align:center;">Lỗi kết nối máy chủ.</div>`; }
 }
 
+// Bướm bay từ giữa tỏa ra các hướng
 function createButterflies() {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
         let b = document.createElement("img");
         b.src = "assets/images/butterfly.png";
         b.className = "flying-butterfly";
-        b.style.left = Math.random() * 100 + "vw";
-        b.style.animationDuration = (Math.random() * 4 + 3) + "s";
-        b.style.animationDelay = (Math.random() * 1.5) + "s";
+        b.style.left = "50vw";
+        b.style.top = "50vh";
+        
+        let dx = (Math.random() * 150 - 75) + "vw"; 
+        let dy = (Math.random() * 150 - 75) + "vh";
+        b.style.setProperty('--dx', dx);
+        b.style.setProperty('--dy', dy);
+        
+        b.style.animationDuration = (Math.random() * 2 + 2) + "s";
+        b.style.animationDelay = (Math.random() * 0.2) + "s";
         document.body.appendChild(b);
-        setTimeout(() => b.remove(), 7000);
+        setTimeout(() => b.remove(), 5000);
     }
 }
 
