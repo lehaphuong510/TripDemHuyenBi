@@ -114,7 +114,6 @@ export async function onRequest(context) {
       }
 
       let rawName = matched[0][2] || "Anh/Chị";
-      // Xử lý xưng hô thông minh: Nếu có dấu gạch ngang thì lấy phần trước, nếu không thì lấy cả cụm, sau đó bóc chữ cuối cùng
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
       let ds_nguoi = matched.map(r => ({ name: r[2], yob: r[3] }));
 
@@ -133,11 +132,11 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  // Nâng cấp: Xóa bỏ triệt để mọi khoảng trắng, ký tự xuống dòng (\n, \r) khỏi private_key
-  const pemContents = privateKey
-      .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-      .replace(/-----END PRIVATE KEY-----/g, "")
-      .replace(/\s+/g, "");
+  // Sửa lỗi atob: Dọn sạch mọi ký tự lạ và bù thêm dấu '=' cho đủ độ dài % 4 == 0
+  let pemContents = privateKey.replace(/-----BEGIN PRIVATE KEY-----/g, "").replace(/-----END PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  while (pemContents.length % 4 !== 0) {
+      pemContents += '=';
+  }
 
   const binaryDer = new Uint8Array(atob(pemContents).length);
   for (let i = 0; i < atob(pemContents).length; i++) binaryDer[i] = atob(pemContents).charCodeAt(i);
