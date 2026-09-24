@@ -81,10 +81,11 @@ export async function onRequest(context) {
       body.ds_nguoi.forEach(nguoi => {
           dataRows.push([timestamp, body.sl, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
       });
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
+      // Đã thêm insertDataOption=INSERT_ROWS để tránh đè dòng
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
 
       const shortlistRow = [[bookingId, body.sl, body.totalMoney, "FALSE"]];
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D:append?valueInputOption=USER_ENTERED`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: shortlistRow }) });
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: shortlistRow }) });
 
       if (body.holdId) { await env.TRIP_KV.delete(body.holdId); }
       return new Response(JSON.stringify({ success: true, bookingId }), { headers: { 'Content-Type': 'application/json' } });
@@ -105,18 +106,31 @@ export async function onRequest(context) {
       }
       if(matched.length === 0) return new Response(JSON.stringify({ success: false, message: "Hệ thống chưa tìm thấy thông tin đăng ký của SĐT này." }), { headers: { 'Content-Type': 'application/json' } });
 
-      let bookingId = matched[0][9];
+      // Lấy tất cả Booking IDs liên quan đến SĐT này
+      let bookingIds = [...new Set(matched.map(m => m[9]))];
+      let displayBookingId = bookingIds.join(", "); 
       let matchedDot = matched[0][6];
       
+      // Cộng gộp người và tổng SL
+      let totalSl = 0;
+      let ds_nguoi = [];
+      matched.forEach(m => {
+          totalSl += parseInt(m[1]) || 0;
+          ds_nguoi.push({ name: m[2], yob: m[3] });
+      });
+
       const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const shortData = await resShort.json();
+      
       let isChecked = false;
-      let totalMoney = 0;
+      let totalMoneyReceived = 0;
       for(let i = 1; i < (shortData.values || []).length; i++) {
-          if(shortData.values[i][0] === bookingId) {
-              totalMoney = parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
-              if(shortData.values[i][3] === "TRUE") isChecked = true; 
-              break; 
+          let sId = shortData.values[i][0];
+          if(bookingIds.includes(sId)) {
+              if(shortData.values[i][3] === "TRUE") { 
+                  isChecked = true; 
+                  totalMoneyReceived += parseInt(String(shortData.values[i][2]).replace(/[^\d]/g, '')) || 0;
+              }
           }
       }
 
@@ -137,10 +151,9 @@ export async function onRequest(context) {
 
       let rawName = matched[0][2] || "Anh/Chị";
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
-      let ds_nguoi = matched.map(r => ({ name: r[2], yob: r[3] }));
 
       return new Response(JSON.stringify({
-          success: true, bookingId, firstName, dot: matchedDot, sl: matched[0][1], phoneDisplay: matched[0][4], isChecked, totalMoney, zaloLink, ds_nguoi
+          success: true, bookingId: displayBookingId, firstName, dot: matchedDot, sl: totalSl, phoneDisplay: matched[0][4], isChecked, totalMoney: totalMoneyReceived, zaloLink, ds_nguoi
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -154,11 +167,9 @@ async function getGoogleAuthToken(clientEmail, privateKey) {
   const claim = { iss: clientEmail, scope: 'https://www.googleapis.com/auth/spreadsheets', aud: 'https://oauth2.googleapis.com/token', exp: now + 3600, iat: now };
   const signatureInput = `${btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}.${btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')}`;
   
-  // FIX ATOB: Lọc xóa MỌI KÝ TỰ (bao gồm khoảng trắng, xuống dòng \n \r, gạch ngang) chỉ giữ đúng [A-Za-z0-9+/=]
   let base64Key = privateKey.replace(/\\n/g, '').replace(/\\r/g, '').replace(/-----.*?-----/g, '');
   base64Key = base64Key.replace(/[^A-Za-z0-9+/=]/g, '');     
   
-  // Bù cho đủ chiều dài chia hết 4
   while (base64Key.length % 4 !== 0) { base64Key += '='; }
 
   const binaryDer = new Uint8Array(atob(base64Key).length);
