@@ -8,6 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@700;900&family=Quicksand:wght@500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- THƯ VIỆN XUẤT EXCEL -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
     <style>
         :root {
             --bg-navy: #091221;
@@ -92,7 +95,7 @@
         .slot-breakdown { display: flex; justify-content: space-between; font-size: 0.9rem; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; align-items: center; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); }
         .slot-available { font-size: 1.6rem; font-weight: bold; color: var(--glow-yellow); margin: 10px 0; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
 
-        input[type="text"], input[type="number"], input[type="tel"] { width: 100%; padding: 14px; background: rgba(255,255,255,0.95); border: none; border-radius: 8px; font-family: 'Quicksand'; font-weight: bold; color: #333; margin-top: 5px; box-sizing: border-box; font-size: 1rem; }
+        input[type="text"], input[type="number"], input[type="tel"], input[type="password"], select { width: 100%; padding: 14px; background: rgba(255,255,255,0.95); border: none; border-radius: 8px; font-family: 'Quicksand'; font-weight: bold; color: #333; margin-top: 5px; box-sizing: border-box; font-size: 1rem; }
         .btn-primary { background: linear-gradient(135deg, #198754 0%, #0F5132 100%); color: white; border: 1px solid #4CAF50; padding: 12px 15px; width: 100%; border-radius: 8px; font-family: 'Mulish'; font-weight: 900; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; margin-top: 15px; }
         .btn-primary:hover { transform: scale(1.02); filter: brightness(1.2); }
 
@@ -104,7 +107,6 @@
         .timer { font-family: 'Mulish'; font-size: 2.5rem; color: #D32F2F; font-weight: 900; animation: pulse 1s infinite; text-align: center; text-shadow: 0 2px 4px rgba(255,255,255,0.5); }
         @media (max-width: 640px) { .payment-flex { flex-direction: column; text-align: center; } .payment-info { text-align: center; } }
 
-        /* NÚT TRA CỨU UI MỚI */
         .lookup-flex { display: flex; gap: 10px; align-items: stretch; justify-content: center; margin-top: 15px;}
         .input-wrapper { position: relative; flex: 1; max-width: 350px; }
         .input-wrapper input { padding-right: 45px; margin-top: 0; height: 100%; }
@@ -118,69 +120,24 @@
             .btn-search { width: auto; min-width: 120px; padding: 12px 20px; margin-top: 10px; }
         }
         
-        /* BẢNG TRA CỨU MỚI */
         .result-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 1rem; border: 1px solid rgba(255,255,255,0.2); }
         .result-table th { background: rgba(15, 81, 50, 0.8); color: var(--glow-yellow); padding: 12px; font-family: 'Mulish'; text-transform: uppercase; border-bottom: 2px solid var(--glow-yellow); }
         .result-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); }
 
-        /* ZALO BANNER RESKIN (DNA MÃ ĐÀ) */
-        .zalo-banner { 
-            background: rgba(11, 43, 38, 0.85); 
-            backdrop-filter: blur(10px); 
-            padding: 20px; 
-            border-radius: 12px; 
-            color: var(--text-main); 
-            font-weight: 900; 
-            margin-top: 25px; 
-            text-align: center; 
-            border: 2px dashed var(--glow-yellow); 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
-            line-height: 1.5;
-        }
-        .zalo-banner a { 
-            display: inline-block; 
-            background: linear-gradient(135deg, #198754 0%, #0F5132 100%); 
-            color: white; 
-            padding: 12px 25px; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            margin-top: 15px; 
-            font-family: 'Mulish'; 
-            transition: 0.3s; 
-            text-transform: uppercase; 
-            border: 1px solid #4CAF50; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
-        }
-        .zalo-banner a:hover { 
-            transform: scale(1.03); 
-            filter: brightness(1.2); 
-            box-shadow: 0 6px 15px rgba(25, 135, 84, 0.6); 
-        }
+        .zalo-banner { background: rgba(11, 43, 38, 0.85); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; color: var(--text-main); font-weight: 900; margin-top: 25px; text-align: center; border: 2px dashed var(--glow-yellow); box-shadow: 0 8px 25px rgba(0,0,0,0.3); line-height: 1.5; }
+        .zalo-banner a { display: inline-block; background: linear-gradient(135deg, #198754 0%, #0F5132 100%); color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; margin-top: 15px; font-family: 'Mulish'; transition: 0.3s; text-transform: uppercase; border: 1px solid #4CAF50; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .zalo-banner a:hover { transform: scale(1.03); filter: brightness(1.2); box-shadow: 0 6px 15px rgba(25, 135, 84, 0.6); }
 
-        /* 2 CỤM FLOATING CHO LAPTOP */
         .desktop-floats { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
         .float-box { background: rgba(11, 43, 38, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         .float-text { font-family: 'Mulish'; font-size: 0.8rem; color: var(--glow-yellow); text-align: center; font-weight: 900; text-transform: uppercase; line-height: 1.3; }
         .float-box img { width: 35px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
         .float-box img:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 4px 8px var(--glow-yellow)); }
         
-        /* FOOTER CHO MOBILE */
         .mobile-footer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(11, 43, 38, 0.95); padding: 10px 0; z-index: 100; border-top: 1px solid var(--glass-border); }
         .mobile-footer-content { display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; width: 100%; }
         @media (max-width: 768px) { .desktop-floats { display: none; } .mobile-footer { display: block; } }
 
-        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: explodeOut 4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        @keyframes explodeOut { 
-            0% { transform: translate(0, 0) scale(0.5); opacity: 1; } 
-            100% { transform: translate(var(--dx), var(--dy)) scale(1.5) rotate(360deg); opacity: 0; } 
-        }
-        
-        .anim-firefly { position: fixed; background: #FFD700; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 15px 5px #FFD700; pointer-events: none; z-index: 9999; animation: flyRandom 5s linear forwards; }
-        @keyframes flyRandom { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(calc(100vw * var(--dx)), calc(-100vh * var(--dy))) scale(0.5); opacity: 0; } }
-
-        /* ================================
-            CARD GRID - CSS VÀNG CỦA PHƯƠNG
-        ================================ */
         .grid-cards, .vd-grid-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; margin-top: 20px; align-items: stretch; }
         .info-card, .vd-info-card { background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%); color: var(--bg-navy); border-radius: 12px; padding: 20px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; height: auto; min-width: 0; }
         .info-card img, .vd-info-card img { width: auto; height: 45px; flex: 0 0 45px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
@@ -193,6 +150,31 @@
         @media (max-width: 480px) { .grid-cards, .vd-grid-cards { grid-template-columns: 1fr; } }
         .vd-card-line2 { display: none; }
         .vd-card-line3 { margin-top: 8px; }
+
+        /* ================================
+           CSS GIAO DIỆN ADMIN
+        ================================ */
+        #admin-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(9, 18, 33, 0.95); z-index: 9999; overflow-y: auto; padding: 20px; box-sizing: border-box; backdrop-filter: blur(10px); }
+        .admin-modal { max-width: 400px; margin: 100px auto; background: var(--glass-bg); padding: 30px; border-radius: 16px; border: 1px solid var(--glow-yellow); box-shadow: 0 0 30px rgba(255,215,0,0.2); text-align: center; }
+        .admin-dashboard { display: none; max-width: 1000px; margin: 0 auto; background: var(--glass-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 50px;}
+        .admin-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--glass-border); padding-bottom: 15px; overflow-x: auto;}
+        .admin-nav button { flex: 1; min-width: 150px; background: rgba(0,0,0,0.4); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; font-family: 'Mulish'; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .admin-nav button.active, .admin-nav button:hover { background: var(--glow-yellow); color: #000; border-color: var(--glow-yellow); }
+        .admin-tab { display: none; animation: fadeIn 0.4s; }
+        .admin-tab.active { display: block; }
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .metric-box { background: rgba(11, 43, 38, 0.8); border: 1px solid var(--glass-border); border-top: 4px solid var(--glow-yellow); padding: 20px; border-radius: 12px; text-align: center; }
+        .metric-title { font-family: 'Mulish'; font-size: 0.9rem; color: #FFF; text-transform: uppercase; margin-bottom: 10px; }
+        .metric-value { font-size: 2rem; color: var(--glow-yellow); font-weight: 900; }
+        .close-admin { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; }
+        .close-admin:hover { color: var(--glow-yellow); }
+        select { width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-family: 'Quicksand'; font-weight: bold; }
+        .btn-export { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; font-family: 'Mulish'; font-weight: 900; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; background: rgba(0,0,0,0.5); }
+        .admin-table th { background: #0F5132; color: var(--glow-yellow); padding: 10px; border: 1px solid var(--glass-border); }
+        .admin-table td { padding: 10px; border: 1px solid var(--glass-border); color: white; text-align: center; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--glow-yellow); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -207,6 +189,7 @@
     <div class="firefly-blink" style="top:55%; left:25%; animation-delay: 2s;"></div>
     <div class="firefly" style="top:80%; left:70%;"></div>
 
+    <!-- KHU VỰC CHÍNH CỦA KHÁCH HÀNG -->
     <div class="container">
         <div class="header-logo">
             <img src="assets/images/logowhite.png" alt="Logo" class="logo"><br>
@@ -275,28 +258,15 @@
         <div id="tab-lichtrinh" class="tab-content">
             <div class="glass-box">
                 <h2 class="section-title">LỊCH TRÌNH</h2>
-                <div class="timeline-item"><div class="timeline-time">12h45</div><div>Tập trung tại Cung văn hóa lao động (55B Nguyễn Thị Minh Khai, Q1)</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">13h00</div><div>Khởi hành đến Khu bảo tồn TN-VH Đồng Nai</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">15h00</div><div>Tham quan Bảo tàng "Đa dạng sinh học rừng Mã Đà"</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">16h30</div><div>Di chuyển vào rừng Mã Đà</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">17h00</div><div>Ăn tối, nhận đèn pin, dặn dò</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">17h45</div><div>Trải nghiệm "Đêm huyền bí" cùng các chuyên gia</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">20h00</div><div>Di chuyển về lại Cung văn hóa lao động</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
-                <div class="timeline-item"><div class="timeline-time">22h00</div><div>Trả khách tại Cung văn hóa lao động</div><img src="assets/images/bocanhcung.png" class="timeline-hover-icon"></div>
+                <div class="timeline-item"><div class="timeline-time">12h45</div><div>Tập trung tại Cung văn hóa lao động (55B Nguyễn Thị Minh Khai, Q1)</div></div>
+                <div class="timeline-item"><div class="timeline-time">13h00</div><div>Khởi hành đến Khu bảo tồn TN-VH Đồng Nai</div></div>
+                <div class="timeline-item"><div class="timeline-time">15h00</div><div>Tham quan Bảo tàng "Đa dạng sinh học rừng Mã Đà"</div></div>
+                <div class="timeline-item"><div class="timeline-time">16h30</div><div>Di chuyển vào rừng Mã Đà</div></div>
+                <div class="timeline-item"><div class="timeline-time">17h00</div><div>Ăn tối, nhận đèn pin, dặn dò</div></div>
+                <div class="timeline-item"><div class="timeline-time">17h45</div><div>Trải nghiệm "Đêm huyền bí" cùng các chuyên gia</div></div>
+                <div class="timeline-item"><div class="timeline-time">20h00</div><div>Di chuyển về lại Cung văn hóa lao động</div></div>
+                <div class="timeline-item"><div class="timeline-time">22h00</div><div>Trả khách tại Cung văn hóa lao động</div></div>
             </div>
-
-            <h2 class="section-title">VẬT DỤNG CẦN THIẾT</h2>
-            <div class="vd-grid-cards">
-                <div class="vd-info-card"><img src="assets/images/aoquan.png"><div class="vd-card-line1">ÁO QUẦN DÀI</div><div class="vd-card-line2"></div><div class="vd-card-line3">Che chắn khỏi cây gai,<br>côn trùng đốt</div></div>
-                <div class="vd-info-card"><img src="assets/images/giayvo.png"><div class="vd-card-line1">GIÀY BATA, VỚ CAO</div><div class="vd-card-line2"></div><div class="vd-card-line3">Tự tin sải bước</div></div>
-                <div class="vd-info-card"><img src="assets/images/sotay.png"><div class="vd-card-line1">SỔ TAY VÀ BÚT</div><div class="vd-card-line2"></div><div class="vd-card-line3">Ghi chép kiến thức thú vị</div></div>
-                <div class="vd-info-card"><img src="assets/images/balo.png"><div class="vd-card-line1">BALO GỌN NHẸ</div><div class="vd-card-line2"></div><div class="vd-card-line3">Chứa các vật dụng<br>cá nhân cần thiết</div></div>
-                <div class="vd-info-card"><img src="assets/images/binhnuoc.png"><div class="vd-card-line1">BÌNH NƯỚC</div><div class="vd-card-line2"></div><div class="vd-card-line3">Tối thiểu 500ml (*)</div></div>
-                <div class="vd-info-card"><img src="assets/images/aomua.png"><div class="vd-card-line1">ÁO MƯA</div><div class="vd-card-line2"></div><div class="vd-card-line3">Dự phòng mưa bất chợt (*)</div></div>
-                <div class="vd-info-card"><img src="assets/images/headlamp.png"><div class="vd-card-line1">ĐÈN PIN ĐEO ĐẦU</div><div class="vd-card-line2"></div><div class="vd-card-line3">Soi đường và quan sát (*)</div></div>
-                <div class="vd-info-card"><img src="assets/images/butterfly.png"><div class="vd-card-line1">SỰ HÁO HỨC</div><div class="vd-card-line2"></div><div class="vd-card-line3">Để có chuyến trải nghiệm<br>thật vui và bổ ích nha ❤️</div></div>
-            </div>
-            <p style="text-align: center; font-size: 1rem; margin-top: 20px;"><i>(*) BTC có dự phòng</i></p>
         </div>
 
         <!-- TAB 3: ĐĂNG KÝ -->
@@ -307,7 +277,7 @@
 
             <div class="glass-box" style="background: rgba(255,215,0,0.1); border-color: var(--glow-yellow);">
                 <h3 style="color: var(--glow-yellow); margin-top:0;">⚠️ MIỄN TRỪ TRÁCH NHIỆM</h3>
-                <p>Trong quá trình trải nghiệm, luôn có 3-4 người trong Ban tổ chức đi đầu, giữa và chốt đoàn để đảm bảo an toàn, hướng dẫn quan sát trải nghiệm cho đoàn tránh bị côn trùng, nhện, rắn... cắn (rủi ro bị cắn rất thấp). Người tham gia đã được thông báo về những rủi ro này, đồng ý tham gia trip và miễn trừ trách nhiệm, miễn bồi thường thiệt hại đối với các cá nhân, đơn vị tổ chức chương trình này nếu có tai nạn, rủi ro xảy ra đối với bản thân, tài sản của người tham gia và của người thân đi cùng.</p>
+                <p>Trong quá trình trải nghiệm, luôn có 3-4 người trong Ban tổ chức đi đầu, giữa và chốt đoàn để đảm bảo an toàn, hướng dẫn quan sát trải nghiệm cho đoàn tránh bị côn trùng, nhện, rắn... cắn. Người tham gia đã được thông báo về những rủi ro này, đồng ý tham gia trip và miễn trừ trách nhiệm.</p>
                 <label style="cursor:pointer; display:flex; align-items:flex-start; gap:12px; font-weight:bold; color: white; margin-top: 15px;">
                     <input type="checkbox" id="agreeCheckbox" style="width:24px; height:24px; flex-shrink:0; margin-top:3px;" onchange="toggleForm()">
                     <span>Tôi đã đọc, hiểu rõ và đồng ý với các nội dung miễn trừ trách nhiệm nêu trên.</span>
@@ -340,11 +310,8 @@
                 
                 <div class="payment-flex">
                     <div class="payment-info">
-                        <p style="font-size: 1.1rem; margin-top:0; display:flex; align-items:center; gap:8px;">
-                            <img src="assets/images/cost.png" style="width:24px; filter:invert(1);">
-                            <b>Tổng tiền:</b> <span id="payTotalAmount" style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;"></span>
-                        </p>
-                        <p style="font-size: 1.1rem;"><b>Tài khoản:</b> To Van Quang - Vietcombank - <b style="font-size: 1.2rem;">0251001799405</b></p>
+                        <div id="payTotalAmount" style="margin-bottom: 10px;"></div>
+                        <p style="font-size: 1.1rem; margin-top:10px;"><b>Tài khoản:</b> To Van Quang - Vietcombank - <b style="font-size: 1.2rem;">0251001799405</b></p>
                         <p style="font-size: 1.1rem; margin-bottom: 0;"><b>Nội dung CK:</b> <br><span id="paySyntax" style="font-family: monospace; font-size: 1.2rem; background: #fff; padding: 5px 10px; border: 1px solid #ccc; font-weight: bold; border-radius: 4px; display:inline-block; margin-top:5px; word-break: break-all;"></span></p>
                     </div>
                     <div class="payment-qr">
@@ -362,7 +329,7 @@
             <div id="submitSuccessBox" class="glass-box" style="display: none; background: rgba(25, 135, 84, 0.9); text-align: center; border: 2px solid var(--glow-yellow);">
                 <h2 style="color: var(--glow-yellow); margin-top:0;">🎉 THÀNH CÔNG!</h2>
                 <p style="text-align: center !important; font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
-                <p style="text-align: center !important; font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ. HỆ THỐNG SẼ SỚM CẬP NHẬT VỀ TRẠNG THÁI THANH TOÁN Ạ!</p>
+                <p style="text-align: center !important; font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">ANH CHỊ CÓ THỂ QUA PHẦN <a href="#" onclick="switchTab('tab-tracuu')" style="color: var(--glow-cyan); font-weight: 900; text-decoration: underline;">TRA CỨU</a> ĐỂ KIỂM TRA LẠI THÔNG TIN ĐĂNG KÝ.</p>
                 <button class="btn-primary" style="width: auto; padding: 10px 30px; margin-top: 15px;" onclick="resetRegistrationForm()">ĐĂNG KÝ ĐỢT KHÁC</button>
             </div>
         </div>
@@ -383,6 +350,7 @@
         </div>
     </div>
 
+    <!-- 2 CỤM FLOATING CHO LAPTOP -->
     <div class="desktop-floats">
         <div class="float-box">
             <span class="float-text">Liên<br>hệ:</span>
@@ -391,7 +359,8 @@
         </div>
         <div class="float-box">
             <span class="float-text">Admin</span>
-            <img src="assets/images/admin.png" alt="Admin" onclick="alert('Đang phát triển tính năng Admin!')">
+            <!-- Thay đổi: Click gọi popup admin thay vì alert -->
+            <img src="assets/images/admin.png" alt="Admin" onclick="showAdminOverlay()">
         </div>
     </div>
 
@@ -402,11 +371,106 @@
             <a href="https://zalo.me/0902800318" target="_blank"><img src="assets/images/call.png" style="width:28px;"></a>
             <span style="color:rgba(255,255,255,0.3);">|</span>
             <span class="footer-text" style="color:var(--glow-yellow); font-weight:bold; font-size:0.85rem;">ADMIN:</span>
-            <img src="assets/images/admin.png" style="width:28px; cursor:pointer;" onclick="alert('Đang phát triển Admin!')">
+            <img src="assets/images/admin.png" style="width:28px; cursor:pointer;" onclick="showAdminOverlay()">
+        </div>
+    </div>
+
+    <!-- ==============================================
+         KHU VỰC ADMIN GIAO DIỆN ẨN (OVERLAY)
+         ============================================== -->
+    <div id="admin-overlay">
+        <span class="close-admin" onclick="hideAdminOverlay()">&times;</span>
+        
+        <!-- Login Modal -->
+        <div id="admin-login" class="admin-modal">
+            <h2 style="color: var(--glow-yellow); font-family: Mulish;">🔐 BẢO MẬT ADMIN</h2>
+            <p>Vui lòng nhập mật khẩu để truy cập Hệ thống Quản trị.</p>
+            <input type="password" id="adminPass" placeholder="Nhập mật khẩu..." onkeypress="if(event.key === 'Enter') checkAdminPass()">
+            <button class="btn-primary" style="margin-top: 20px;" onclick="checkAdminPass()">ĐĂNG NHẬP</button>
+            <div id="admin-error" style="color: #ff4d4d; margin-top: 15px; display: none;">Sai mật khẩu!</div>
+        </div>
+
+        <!-- Dashboard Admin -->
+        <div id="admin-dashboard" class="admin-dashboard">
+            <h2 style="text-align: center; color: var(--glow-yellow); font-family: Mulish; text-transform: uppercase;">KHU VỰC QUẢN TRỊ ADMIN</h2>
+            
+            <div class="admin-nav">
+                <button class="active" onclick="switchAdminTab('admin-tab-1')">📊 Thống kê Số Lượng</button>
+                <button onclick="switchAdminTab('admin-tab-2')">💰 Thống kê Chi Phí</button>
+                <button onclick="switchAdminTab('admin-tab-3')">📝 Sửa Cấu hình</button>
+            </div>
+
+            <!-- Tab 1: Số lượng & Doanh thu -->
+            <div id="admin-tab-1" class="admin-tab active">
+                <div class="glass-box">
+                    <label style="color: var(--glow-yellow); font-weight: bold;">Chọn Đợt để xem thống kê:</label>
+                    <select id="admin-dot-select" onchange="renderAdminStats()"></select>
+                </div>
+                <div id="admin-stats-result">Đang tải dữ liệu...</div>
+            </div>
+
+            <!-- Tab 2: Chi phí -->
+            <div id="admin-tab-2" class="admin-tab">
+                <div class="glass-box">
+                    <label style="color: var(--glow-yellow); font-weight: bold;">Chọn Đợt tính chi phí:</label>
+                    <select id="admin-cost-select" onchange="renderAdminCost()"></select>
+                    
+                    <label style="color: var(--glow-yellow); font-weight: bold; margin-top: 15px;">Chọn các hạng mục phát sinh (Dropdown):</label>
+                    <div id="admin-dropdown-options" style="margin-bottom: 15px;"></div>
+                    
+                    <button class="btn-search" onclick="renderAdminCost()">TÍNH TOÁN LỢI NHUẬN</button>
+                </div>
+                <div id="admin-cost-result"></div>
+            </div>
+
+            <!-- Tab 3: Cấu hình gốc -->
+            <div id="admin-tab-3" class="admin-tab">
+                <div class="glass-box" style="text-align: left;">
+                    <div style="background: rgba(255, 193, 7, 0.2); padding: 15px; border-left: 4px solid #FFC107; margin-bottom: 20px;">
+                        ⚠️ Mọi thay đổi ở đây sẽ cập nhật trực tiếp lên tab 'Config' của Google Sheet và Cloudflare KV.
+                    </div>
+                    
+                    <h3 style="color: var(--glow-cyan); border-bottom: 1px dashed var(--glass-border); padding-bottom: 10px;">1. Cụm Scheme vé</h3>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 120px;">
+                            <label>Vé 1 người</label>
+                            <input type="number" id="cfg-ve" step="1000">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 120px;">
+                            <label>SL khuyến mãi</label>
+                            <input type="number" id="cfg-slkm">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 120px;">
+                            <label>Scheme khuyến mãi</label>
+                            <input type="number" id="cfg-schemekm" step="1000">
+                        </div>
+                    </div>
+
+                    <h3 style="color: var(--glow-cyan); border-bottom: 1px dashed var(--glass-border); padding-bottom: 10px; margin-top: 20px;">2. Số lượng giới hạn & Link Zalo (Các Đợt)</h3>
+                    <div id="cfg-dots-container"></div>
+                    <button class="btn-search" style="font-size: 0.9rem; padding: 5px 15px;" onclick="addConfigDot()">+ Thêm Đợt</button>
+
+                    <h3 style="color: var(--glow-cyan); border-bottom: 1px dashed var(--glass-border); padding-bottom: 10px; margin-top: 20px;">3. Cụm Chi phí tổ chức</h3>
+                    <table class="admin-table" id="cfg-cost-table">
+                        <thead>
+                            <tr>
+                                <th>Chi phí tổ chức</th>
+                                <th>Unit cost</th>
+                                <th>Loại chi phí</th>
+                                <th>Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cfg-cost-body"></tbody>
+                    </table>
+                    <button class="btn-search" style="font-size: 0.9rem; padding: 5px 15px; margin-top: 10px;" onclick="addConfigCost()">+ Thêm Chi Phí</button>
+
+                    <button class="btn-primary" id="btn-save-config" style="margin-top: 30px;" onclick="saveConfigToServer()">LƯU THAY ĐỔI LÊN GOOGLE SHEET 💾</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- ĐỔI ĐUÔI ÉP TRÌNH DUYỆT TẢI LẠI JS MỚI NHẤT -->
-    <script src="script.js?v=1002"></script>
+    <script src="script.js?v=1006"></script>
 </body>
 </html>
