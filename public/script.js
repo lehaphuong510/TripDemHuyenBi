@@ -167,16 +167,20 @@ async function holdSlotAndPay() {
             document.getElementById('registrationForm').style.display = 'none';
             document.getElementById('paymentBox').style.display = 'block';
             
-            // Render Giao diện Giá tiền Lũy kế
+            // CẬP NHẬT LAYOUT 3 DÒNG GIÁ TIỀN
             let payContainer = document.getElementById('payTotalAmount');
             if(data.isDiscountCross) {
                 payContainer.innerHTML = `
-                    <div style="font-size: 1rem; color: #888; text-decoration: line-through;">${data.originalCost.toLocaleString('vi-VN')} VNĐ</div>
-                    <div style="font-size: 0.95rem; color: #ff9800; font-weight: normal; margin-bottom: 5px;">*A/C được giảm thêm do đã đăng ký đủ ${configData.slKhuyenMai} suất cho Đợt này: -${data.discountValue.toLocaleString('vi-VN')} VNĐ</div>
-                    <div style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;">${data.finalCost.toLocaleString('vi-VN')} VNĐ</div>
+                    <div style="display: flex; flex-direction: column; width: 100%;">
+                        <div style="font-size: 1.1rem; color: #333;">Số tiền: <span style="color: #888; text-decoration: line-through;">${data.originalCost.toLocaleString('vi-VN')} VNĐ</span></div>
+                        <div style="font-size: 0.95rem; color: #ff9800; font-weight: normal; margin: 5px 0;">*A/C được giảm thêm do đã đăng ký từ ${configData.slKhuyenMai} suất cho Đợt này: -${data.discountValue.toLocaleString('vi-VN')} VNĐ</div>
+                        <div style="font-size: 1.1rem; color: #333; margin-top: 5px;">Số tiền CK thực tế: <span style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;">${data.finalCost.toLocaleString('vi-VN')} VNĐ</span></div>
+                    </div>
                 `;
+                payContainer.style.display = "block"; // Ép block thay vì inline-flex để rớt dòng đẹp
             } else {
-                payContainer.innerHTML = `<div style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;">${data.finalCost.toLocaleString('vi-VN')} VNĐ</div>`;
+                payContainer.innerHTML = `<span style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;">${data.finalCost.toLocaleString('vi-VN')} VNĐ</span>`;
+                payContainer.style.display = "inline-flex";
             }
             
             let firstParticipant = document.getElementById('name_1').value;
