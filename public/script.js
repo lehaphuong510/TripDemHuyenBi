@@ -134,7 +134,6 @@ async function holdSlotAndPay() {
     const phone = document.getElementById('phoneInput').value;
     const num = parseInt(document.getElementById('numPeople').value);
 
-    // KIỂM TRA ĐIỀU KIỆN 5 TUỔI TRỞ LÊN VÀ THÔNG TIN BẮT BUỘC
     const currentYear = new Date().getFullYear();
     const maxAllowedYear = currentYear - 5;
     
@@ -157,10 +156,10 @@ async function holdSlotAndPay() {
     }
 
     const btn = document.getElementById('btnHold');
-    btn.innerHTML = "ĐANG GIỮ CHỖ... ⏳"; btn.disabled = true;
+    btn.innerHTML = "ĐANG TÍNH TOÁN... ⏳"; btn.disabled = true;
 
     try {
-        const res = await fetch('/api/hold', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dot: dot, sl: num }) });
+        const res = await fetch('/api/hold', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dot: dot, sl: num, phone: phone }) });
         const data = await res.json();
         
         if(data.success) {
@@ -168,13 +167,17 @@ async function holdSlotAndPay() {
             document.getElementById('registrationForm').style.display = 'none';
             document.getElementById('paymentBox').style.display = 'block';
             
-            let totalCost = 0;
-            const costVal = Number(configData.fixedCost) || 0;
-            const schemeVal = Number(configData.schemeKhuyenMai) || 0;
-            const slKhuyenMai = Number(configData.slKhuyenMai) || 999;
-            
-            if (num >= slKhuyenMai) { totalCost = (costVal - schemeVal) * num; } else { totalCost = costVal * num; }
-            document.getElementById('payTotalAmount').innerText = totalCost.toLocaleString('vi-VN') + " VNĐ";
+            // Render Giao diện Giá tiền Lũy kế
+            let payContainer = document.getElementById('payTotalAmount');
+            if(data.isDiscountCross) {
+                payContainer.innerHTML = `
+                    <div style="font-size: 1rem; color: #888; text-decoration: line-through;">${data.originalCost.toLocaleString('vi-VN')} VNĐ</div>
+                    <div style="font-size: 0.95rem; color: #ff9800; font-weight: normal; margin-bottom: 5px;">*A/C được giảm thêm do đã đăng ký đủ ${configData.slKhuyenMai} suất cho Đợt này: -${data.discountValue.toLocaleString('vi-VN')} VNĐ</div>
+                    <div style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;">${data.finalCost.toLocaleString('vi-VN')} VNĐ</div>
+                `;
+            } else {
+                payContainer.innerHTML = `<div style="color: #D32F2F; font-size: 1.4rem; font-weight: 900;">${data.finalCost.toLocaleString('vi-VN')} VNĐ</div>`;
+            }
             
             let firstParticipant = document.getElementById('name_1').value;
             let cleanName = firstParticipant.split('-')[0].trim().split(' ').pop().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toUpperCase();
@@ -227,12 +230,6 @@ async function submitFinalRegistration() {
             for(let i=1; i<=num; i++) {
                 ds_nguoi.push({ name: document.getElementById(`name_${i}`).value, yob: document.getElementById(`yob_${i}`).value });
             }
-            
-            let totalCost = 0;
-            const costVal = Number(configData.fixedCost) || 0;
-            const schemeVal = Number(configData.schemeKhuyenMai) || 0;
-            const slKhuyenMai = Number(configData.slKhuyenMai) || 999;
-            if (num >= slKhuyenMai) { totalCost = (costVal - schemeVal) * num; } else { totalCost = costVal * num; }
 
             const payload = {
                 dot_tham_gia: document.getElementById('selectedDot').value,
@@ -241,7 +238,6 @@ async function submitFinalRegistration() {
                 phone: document.getElementById('phoneInput').value,
                 phone_backup: document.getElementById('phoneBackup').value,
                 bill_url: imgbbData.data.url,
-                totalMoney: totalCost,
                 holdId: currentHoldId
             };
 
@@ -292,29 +288,28 @@ function resetRegistrationForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// XỬ LÝ RENDER VIEW CHO TRA CỨU: TÁCH THEO MÃ BOOKING
+// XỬ LÝ RENDER VIEW CHO TRA CỨU: TÁCH THEO ĐỢT (GROUP BY DOT)
 function renderLookupBlock(blockData, type) {
-    let bookingsHtml = "";
+    let dotsHtml = "";
     
-    blockData.bookings.forEach((b, index) => {
+    blockData.dotsGroup.forEach((d, index) => {
         let dsHtml = `<table class="result-table"><tr><th style="text-align:left;">HỌ VÀ TÊN</th><th style="text-align:center;">NĂM SINH</th></tr>`;
-        b.ds_nguoi.forEach(ng => { 
+        d.ds_nguoi.forEach(ng => { 
             dsHtml += `<tr><td style="text-align:left;"><b style="color: var(--glow-yellow);">${ng.name}</b></td><td style="text-align:center; color: white;">${ng.yob}</td></tr>`; 
         });
         dsHtml += `</table>`;
 
-        bookingsHtml += `
+        dotsHtml += `
             <div style="margin-bottom: 5px;">
-                <div style="margin-bottom:8px; color: white;">🔹 Mã Booking: <b style="color: var(--glow-yellow);">${b.bId}</b></div>
-                <div style="margin-bottom:8px; color: white;">&nbsp;&nbsp;&nbsp;&nbsp;Đợt tham gia: <b style="color: var(--glow-yellow);">${b.dot}</b></div>
-                <div style="margin-bottom:10px; color: white;">&nbsp;&nbsp;&nbsp;&nbsp;Số lượng: <b style="color: var(--glow-yellow);">${b.sl} người</b></div>
+                <div style="margin-bottom:8px; color: white;">🔹 Đợt tham gia: <b style="color: var(--glow-yellow);">${d.dotName}</b></div>
+                <div style="margin-bottom:8px; color: white;">&nbsp;&nbsp;&nbsp;&nbsp;Mã Booking: <b style="color: var(--glow-yellow);">${d.bIds.join(", ")}</b></div>
+                <div style="margin-bottom:10px; color: white;">&nbsp;&nbsp;&nbsp;&nbsp;Số lượng: <b style="color: var(--glow-yellow);">${d.sl} người</b></div>
                 ${dsHtml}
             </div>
         `;
         
-        // Vẽ thêm đường kẻ đứt nét ngăn cách nếu chưa phải là Mã Booking cuối cùng
-        if (index < blockData.bookings.length - 1) {
-            bookingsHtml += `<hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.3); margin: 20px 0;">`;
+        if (index < blockData.dotsGroup.length - 1) {
+            dotsHtml += `<hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.3); margin: 20px 0;">`;
         }
     });
 
@@ -330,7 +325,7 @@ function renderLookupBlock(blockData, type) {
                 <div style="padding: 20px; flex: 1;">
                     <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:15px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
                     <div style="margin-bottom:15px; color: white;">SĐT người đại diện: <b style="color: var(--glow-yellow);">${blockData.phoneDisplay}</b></div>
-                    ${bookingsHtml}
+                    ${dotsHtml}
                 </div>
             </div>
         `;
@@ -346,7 +341,7 @@ function renderLookupBlock(blockData, type) {
                 <div style="padding: 20px; flex: 1;">
                     <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:15px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
                     <div style="margin-bottom:15px; color: white;">SĐT người đại diện: <b style="color: var(--glow-yellow);">${blockData.phoneDisplay}</b></div>
-                    ${bookingsHtml}
+                    ${dotsHtml}
                 </div>
             </div>
         `;
@@ -369,7 +364,7 @@ async function lookupBooking() {
         let blocksHtml = `<div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; justify-content: center; width: 100%;">`;
         let zaloHtml = "";
         
-        if (data.paid && data.paid.bookings.length > 0) {
+        if (data.paid && data.paid.dotsGroup.length > 0) {
             blocksHtml += renderLookupBlock(data.paid, 'paid');
             createFireflies(); 
             
@@ -383,7 +378,7 @@ async function lookupBooking() {
             }
         }
 
-        if (data.pending && data.pending.bookings.length > 0) {
+        if (data.pending && data.pending.dotsGroup.length > 0) {
             blocksHtml += renderLookupBlock(data.pending, 'pending');
         }
 
