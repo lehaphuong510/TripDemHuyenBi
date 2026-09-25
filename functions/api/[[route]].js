@@ -7,13 +7,11 @@ export async function onRequest(context) {
   try {
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
-      
       if (authHeader !== 'Bearer 0519') {
         return new Response('Unauthorized', { status: 401 });
       }
 
       const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
-      
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
       
@@ -82,11 +80,68 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // ====================================================================
+    // THUẬT TOÁN TÍNH TIỀN LŨY KẾ Ở BƯỚC GIỮ CHỖ
+    // ====================================================================
     if (url.pathname === '/api/hold' && request.method === 'POST') {
-        const { dot, sl } = await request.json();
+        const { dot, sl, phone } = await request.json();
+        
+        // Bốc config ra để lấy giá trị n, m
+        const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
+        const configValues = configValuesStr ? JSON.parse(configValuesStr) : [];
+        let fixedCost = 0, schemeVal = 0, slKhuyenMai = 999;
+        if (configValues.length > 0) {
+            const configHeaders = configValues[0].map(h => h ? h.toString().trim() : "");
+            const parseNum = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
+            const row2 = configValues[1] || [];
+            fixedCost = parseNum(row2[configHeaders.indexOf('Vé 1 người')]);
+            slKhuyenMai = parseNum(row2[configHeaders.indexOf('SL khuyến mãi')]) || 999;
+            schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
+        }
+
+        // Bốc lịch sử (n) của SĐT này cho Đợt này
+        let cleanPhone = (phone || "").trim().replace(/^0+/, '');
+        const dataValuesStr = await env.TRIP_KV.get('CACHE_DATA');
+        const dataRows = dataValuesStr ? JSON.parse(dataValuesStr) : [];
+        let nCount = 0;
+        for(let i=1; i<dataRows.length; i++) {
+            let rowPhone = (dataRows[i][4] || "").replace(/^0+/, '').replace(/'/g, '');
+            let rowDot = dataRows[i][6];
+            if(rowPhone === cleanPhone && rowDot === dot) {
+                nCount += 1;
+            }
+        }
+
+        let m = parseInt(sl);
+        let finalCost = 0;
+        let originalCost = m * fixedCost;
+        let isDiscountCross = false;
+        let discountValue = 0;
+
+        // Áp dụng luật tính nhẩm
+        if (nCount < slKhuyenMai && (nCount + m) >= slKhuyenMai) {
+            // Trường hợp A: Vượt mốc -> Trừ dồn phần của n
+            finalCost = (m * fixedCost) - ((nCount + m) * schemeVal);
+            isDiscountCross = true;
+            discountValue = (nCount + m) * schemeVal;
+        } else if (nCount >= slKhuyenMai) {
+            // Trường hợp B: Đã đạt mốc từ trước -> Chỉ giảm phần của m
+            finalCost = m * (fixedCost - schemeVal);
+            // Vẫn coi là có discount để báo cho khách
+            isDiscountCross = true;
+            discountValue = m * schemeVal;
+        } else {
+            // Trường hợp C: Vẫn chưa đạt mốc
+            finalCost = m * fixedCost;
+        }
+
         const holdId = "HOLD-" + Date.now();
-        await env.TRIP_KV.put(holdId, JSON.stringify({ dot, sl }), { expirationTtl: 900 });
-        return new Response(JSON.stringify({ success: true, holdId }), { headers: { 'Content-Type': 'application/json' } });
+        await env.TRIP_KV.put(holdId, JSON.stringify({ dot, sl: m }), { expirationTtl: 900 });
+        
+        return new Response(JSON.stringify({ 
+            success: true, holdId, 
+            finalCost, originalCost, isDiscountCross, discountValue 
+        }), { headers: { 'Content-Type': 'application/json' } });
     }
 
     if (url.pathname === '/api/submit' && request.method === 'POST') {
@@ -114,7 +169,7 @@ export async function onRequest(context) {
     }
 
     // ====================================================================
-    // 5. TRA CỨU: TRẢ VỀ MẢNG bookings ĐỂ TÁCH CHIA TRÊN GIAO DIỆN
+    // THUẬT TOÁN GỘP GROUP DOT VÀ TÍNH TIỀN TRA CỨU
     // ====================================================================
     if (url.pathname === '/api/lookup' && request.method === 'POST') {
       const { phone } = await request.json();
@@ -133,16 +188,6 @@ export async function onRequest(context) {
       let rawName = matched[0][2] || "Anh/Chị";
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
 
-      let bookingsMap = {};
-      matched.forEach(r => {
-          let bId = r[9];
-          if(!bookingsMap[bId]) {
-              bookingsMap[bId] = { bId: bId, dot: r[6], sl: 0, ds_nguoi: [], isChecked: false, money: 0 };
-          }
-          bookingsMap[bId].sl += 1;
-          bookingsMap[bId].ds_nguoi.push({name: r[2], yob: r[3]});
-      });
-
       const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
       const dataConfigValues = configValuesStr ? JSON.parse(configValuesStr) : [];
       let fixedCost = 0, schemeVal = 0, slKhuyenMai = 999;
@@ -155,44 +200,68 @@ export async function onRequest(context) {
           schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
       }
 
-      Object.values(bookingsMap).forEach(b => {
-          if (b.sl >= slKhuyenMai) {
-              b.money = (fixedCost - schemeVal) * b.sl;
-          } else {
-              b.money = fixedCost * b.sl;
-          }
-      });
-
+      // Map Trạng Thái từ Shortlist
       const shortValuesStr = await env.TRIP_KV.get('CACHE_SHORTLIST');
       const shortDataValues = shortValuesStr ? JSON.parse(shortValuesStr) : [];
+      let shortMap = {};
       for(let i = 1; i < shortDataValues.length; i++) {
-          let sId = shortDataValues[i][0];
-          if(bookingsMap[sId]) {
-              bookingsMap[sId].isChecked = (shortDataValues[i][3] === "TRUE");
-          }
+          shortMap[shortDataValues[i][0]] = (shortDataValues[i][3] === "TRUE");
       }
 
-      let paidGrp = { bookings: [], totalSl: 0, totalMoney: 0, phoneDisplay: matched[0][4] };
-      let pendGrp = { bookings: [], totalSl: 0, totalMoney: 0, phoneDisplay: matched[0][4] };
+      // Nhóm theo Đợt -> Lọc Paid/Pending
+      let paidMapByDot = {};
+      let pendMapByDot = {};
 
-      Object.values(bookingsMap).forEach(b => {
-          let target = b.isChecked ? paidGrp : pendGrp;
-          target.bookings.push(b);
-          target.totalSl += b.sl;
-          target.totalMoney += b.money;
+      matched.forEach(r => {
+          let bId = r[9];
+          let dot = r[6];
+          let isChecked = shortMap[bId] || false;
+          
+          let targetMap = isChecked ? paidMapByDot : pendMapByDot;
+          
+          if(!targetMap[dot]) {
+              targetMap[dot] = { dotName: dot, sl: 0, ds_nguoi: [], bIds: new Set() };
+          }
+          targetMap[dot].sl += 1;
+          targetMap[dot].ds_nguoi.push({name: r[2], yob: r[3]});
+          targetMap[dot].bIds.add(bId);
       });
 
-      let paidDots = new Set(paidGrp.bookings.map(b => b.dot));
+      // Hàm tính tổng tiền cho 1 Đợt (Dựa vào tổng n người của Đợt đó)
+      const calculateDotMoney = (dotData) => {
+          if (dotData.sl >= slKhuyenMai) {
+              return (fixedCost - schemeVal) * dotData.sl;
+          } else {
+              return fixedCost * dotData.sl;
+          }
+      };
+
+      let paidGrp = { dotsGroup: [], totalMoney: 0, phoneDisplay: matched[0][4] };
+      Object.values(paidMapByDot).forEach(d => {
+          d.bIds = Array.from(d.bIds);
+          let money = calculateDotMoney(d);
+          paidGrp.totalMoney += money;
+          paidGrp.dotsGroup.push(d);
+      });
+
+      let pendGrp = { dotsGroup: [], totalMoney: 0, phoneDisplay: matched[0][4] };
+      Object.values(pendMapByDot).forEach(d => {
+          d.bIds = Array.from(d.bIds);
+          let money = calculateDotMoney(d);
+          pendGrp.totalMoney += money;
+          pendGrp.dotsGroup.push(d);
+      });
+
       let zaloLinks = [];
-      if (paidGrp.bookings.length > 0 && dataConfigValues.length > 0) {
+      if (paidGrp.dotsGroup.length > 0 && dataConfigValues.length > 0) {
           const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
           const idxTenDot = configHeaders.indexOf('Nội dung option');
           const idxZalo = configHeaders.indexOf('Link Zalo');
           
           if(idxTenDot !== -1 && idxZalo !== -1) {
-              Array.from(paidDots).forEach(d => {
+              paidGrp.dotsGroup.forEach(d => {
                   for(let r=1; r<dataConfigValues.length; r++) {
-                      if(dataConfigValues[r][idxTenDot] === d && dataConfigValues[r][idxZalo]) {
+                      if(dataConfigValues[r][idxTenDot] === d.dotName && dataConfigValues[r][idxZalo]) {
                           zaloLinks.push(dataConfigValues[r][idxZalo]);
                           break;
                       }
