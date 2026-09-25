@@ -123,9 +123,39 @@
         .result-table th { background: rgba(15, 81, 50, 0.8); color: var(--glow-yellow); padding: 12px; font-family: 'Mulish'; text-transform: uppercase; border-bottom: 2px solid var(--glow-yellow); }
         .result-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); }
 
-        .zalo-banner { background: linear-gradient(135deg, #FFD700, #FFA500); padding: 20px; border-radius: 12px; color: #091221; font-weight: 900; margin-top: 25px; text-align: center; border: 2px dashed #D32F2F; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .zalo-banner a { display: inline-block; background: #D32F2F; color: white; padding: 12px 25px; text-decoration: none; border-radius: 30px; margin-top: 10px; font-family: 'Mulish'; transition: 0.3s; text-transform: uppercase; box-shadow: 0 4px 10px rgba(211,47,47,0.4); }
-        .zalo-banner a:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(211,47,47,0.6); }
+        /* ZALO BANNER RESKIN (DNA MÃ ĐÀ) */
+        .zalo-banner { 
+            background: rgba(11, 43, 38, 0.85); 
+            backdrop-filter: blur(10px); 
+            padding: 20px; 
+            border-radius: 12px; 
+            color: var(--text-main); 
+            font-weight: 900; 
+            margin-top: 25px; 
+            text-align: center; 
+            border: 2px dashed var(--glow-yellow); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
+            line-height: 1.5;
+        }
+        .zalo-banner a { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #198754 0%, #0F5132 100%); 
+            color: white; 
+            padding: 12px 25px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-top: 15px; 
+            font-family: 'Mulish'; 
+            transition: 0.3s; 
+            text-transform: uppercase; 
+            border: 1px solid #4CAF50; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        }
+        .zalo-banner a:hover { 
+            transform: scale(1.03); 
+            filter: brightness(1.2); 
+            box-shadow: 0 6px 15px rgba(25, 135, 84, 0.6); 
+        }
 
         /* 2 CỤM FLOATING CHO LAPTOP */
         .desktop-floats { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
@@ -139,7 +169,12 @@
         .mobile-footer-content { display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; width: 100%; }
         @media (max-width: 768px) { .desktop-floats { display: none; } .mobile-footer { display: block; } }
 
-        /* Bỏ CSS phức tạp, Đom đóm dùng CSS cũ, Bướm nổ sẽ xử lý bằng Javascript 100% để đảm bảo tương thích */
+        .flying-butterfly { position: fixed; width: 35px; z-index: 9999; pointer-events: none; animation: explodeOut 4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes explodeOut { 
+            0% { transform: translate(0, 0) scale(0.5); opacity: 1; } 
+            100% { transform: translate(var(--dx), var(--dy)) scale(1.5) rotate(360deg); opacity: 0; } 
+        }
+        
         .anim-firefly { position: fixed; background: #FFD700; width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 15px 5px #FFD700; pointer-events: none; z-index: 9999; animation: flyRandom 5s linear forwards; }
         @keyframes flyRandom { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate(calc(100vw * var(--dx)), calc(-100vh * var(--dy))) scale(0.5); opacity: 0; } }
 
@@ -296,7 +331,7 @@
                 <button class="btn-primary" id="btnHold" onclick="holdSlotAndPay()">TIẾP TỤC THANH TOÁN 🚀</button>
             </div>
 
-            <!-- PAYMENT BOX NỀN TRẮNG 60% -->
+            <!-- PAYMENT BOX -->
             <div id="paymentBox" class="payment-box">
                 <h2 style="color: #0F5132; margin-top:0; text-align:center; display: flex; justify-content: center; align-items: center; gap: 8px;">
                     <img src="assets/images/donghocat.png" style="width: 28px;"> VUI LÒNG HOÀN TẤT TRONG:
@@ -323,7 +358,7 @@
                 <button class="btn-primary" id="btnSubmitFinal" onclick="submitFinalRegistration()">XÁC NHẬN ĐÃ CHUYỂN KHOẢN</button>
             </div>
 
-            <!-- BOX SUCCESS: Text Align Center !important và Nút Reset -->
+            <!-- BOX SUCCESS -->
             <div id="submitSuccessBox" class="glass-box" style="display: none; background: rgba(25, 135, 84, 0.9); text-align: center; border: 2px solid var(--glow-yellow);">
                 <h2 style="color: var(--glow-yellow); margin-top:0;">🎉 THÀNH CÔNG!</h2>
                 <p style="text-align: center !important; font-size: 1.1rem; line-height: 1.6; text-transform: uppercase;">HỆ THỐNG ĐÃ GHI NHẬN ĐĂNG KÝ - MÃ BOOKING: <b id="successBookingId" style="font-size: 1.3rem; color: var(--glow-yellow);"></b> !</p>
@@ -348,7 +383,6 @@
         </div>
     </div>
 
-    <!-- 2 CỤM FLOATING CHO LAPTOP -->
     <div class="desktop-floats">
         <div class="float-box">
             <span class="float-text">Liên<br>hệ:</span>
@@ -361,7 +395,6 @@
         </div>
     </div>
 
-    <!-- FOOTER CHO MOBILE -->
     <div class="mobile-footer">
         <div class="mobile-footer-content">
             <span class="footer-text" style="color:var(--glow-yellow); font-weight:bold; font-size:0.85rem;">LIÊN HỆ:</span>
@@ -373,7 +406,7 @@
         </div>
     </div>
 
-    <!-- ĐỔI ĐUÔI ?v=999 ĐỂ ÉP TRÌNH DUYỆT TẢI LẠI JS MỚI NHẤT, KHÔNG XÀI BẢN CACHE CŨ -->
-    <script src="script.js?v=999"></script>
+    <!-- ĐỔI ĐUÔI ÉP TRÌNH DUYỆT TẢI LẠI JS MỚI NHẤT -->
+    <script src="script.js?v=1001"></script>
 </body>
 </html>
