@@ -5,12 +5,52 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   try {
+    // ====================================================================
+    // ADMIN: TẢI TOÀN BỘ DATA (0 COST GOOGLE API)
+    // ====================================================================
+    if (url.pathname === '/api/admin/data' && request.method === 'GET') {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader !== 'Bearer 0519') return new Response('Unauthorized', { status: 401 });
+
+      const c = await env.TRIP_KV.get('CACHE_CONFIG') || "[]";
+      const d = await env.TRIP_KV.get('CACHE_DATA') || "[]";
+      const s = await env.TRIP_KV.get('CACHE_SHORTLIST') || "[]";
+      
+      return new Response(JSON.stringify({
+          config: JSON.parse(c), data: JSON.parse(d), shortlist: JSON.parse(s)
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // ====================================================================
+    // ADMIN: LƯU CẤU HÌNH ĐÈ LÊN GOOGLE SHEET (TỐN 1 LỆNH GOOGLE)
+    // ====================================================================
+    if (url.pathname === '/api/admin/update' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader !== 'Bearer 0519') return new Response('Unauthorized', { status: 401 });
+        
+        const body = await request.json(); 
+        const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
+        
+        // Cập nhật Google Sheet (clear rồi put)
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z:clear`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A1?valueInputOption=USER_ENTERED`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: body.values })
+        });
+        
+        // Cập nhật ngay vào Tủ kính KV
+        await env.TRIP_KV.put('CACHE_CONFIG', JSON.stringify(body.values));
+        return new Response(JSON.stringify({success: true}), {headers: {'Content-Type': 'application/json'}});
+    }
+
+    // ====================================================================
+    // CÁC API KHÁCH HÀNG BÊN DƯỚI ĐƯỢC GIỮ NGUYÊN HOÀN TOÀN
+    // ====================================================================
+
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
-      
-      if (authHeader !== 'Bearer 0519') {
-        return new Response('Unauthorized', { status: 401 });
-      }
+      if (authHeader !== 'Bearer MAT_KHAU_BAO_MAT_CUA_BAN_TUTAO') return new Response('Unauthorized', { status: 401 });
 
       const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
       
@@ -152,15 +192,12 @@ export async function onRequest(context) {
       const currentDataStr = await env.TRIP_KV.get('CACHE_DATA');
       if (currentDataStr) {
           let currentData = JSON.parse(currentDataStr);
-          
-          // SỬA LỖI TẠI ĐÂY: Lưu SĐT vào tủ kính không có dấu nháy đơn để hàm Tra cứu không bị lỗi
           let dataRowsNoQuote = dataRows.map(row => {
               let newRow = [...row];
               newRow[4] = newRow[4].replace(/'/g, ''); 
               newRow[5] = newRow[5].replace(/'/g, ''); 
               return newRow;
           });
-          
           currentData.push(...dataRowsNoQuote); 
           await env.TRIP_KV.put('CACHE_DATA', JSON.stringify(currentData));
       }
@@ -169,9 +206,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ success: true, bookingId }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ====================================================================
-    // THUẬT TOÁN GỘP GROUP DOT VÀ TÍNH TIỀN TRA CỨU
-    // ====================================================================
     if (url.pathname === '/api/lookup' && request.method === 'POST') {
       const { phone } = await request.json();
       const cleanPhone = phone.trim().replace(/^0+/, '');
