@@ -50,7 +50,7 @@ export async function onRequest(context) {
 
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
-      if (authHeader !== 'Bearer MAT_KHAU_BAO_MAT_CUA_BAN_TUTAO') return new Response('Unauthorized', { status: 401 });
+      if (authHeader !== 'Bearer 0519') return new Response('Unauthorized', { status: 401 });
 
       const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
       
