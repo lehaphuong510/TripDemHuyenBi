@@ -11,14 +11,12 @@ export async function onRequest(context) {
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
       
-      // THAY MẬT KHẨU CỦA BẠN VÀO ĐÂY (PHẢI TRÙNG VỚI BÊN FILE APP SCRIPT CỦA SHEET)
-      if (authHeader !== 'Bearer 0519') {
+      if (authHeader !== 'Bearer MAT_KHAU_BAO_MAT_CUA_BAN_TUTAO') {
         return new Response('Unauthorized', { status: 401 });
       }
 
       const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
       
-      // Kéo 3 bảng về
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
       
@@ -28,7 +26,6 @@ export async function onRequest(context) {
       const resShort = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Shortlist!A4:D?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataShort = await resShort.json();
 
-      // Cất thẳng vào Tủ kính Cloudflare KV
       await env.TRIP_KV.put('CACHE_CONFIG', JSON.stringify(dataConfig.values || []));
       await env.TRIP_KV.put('CACHE_DATA', JSON.stringify(dataData.values || []));
       await env.TRIP_KV.put('CACHE_SHORTLIST', JSON.stringify(dataShort.values || []));
@@ -60,13 +57,11 @@ export async function onRequest(context) {
       
       let options = [];
 
-      // Đọc Data từ tủ kính để đếm số Đã ĐK
       const dataValuesStr = await env.TRIP_KV.get('CACHE_DATA');
       const dataRows = dataValuesStr ? JSON.parse(dataValuesStr) : [];
       let bookedMapCount = {};
       for(let i=1; i<dataRows.length; i++) {
           let dot = dataRows[i][6];
-          // Nguyên tắc Count số dòng (mỗi dòng là 1 người)
           if(dot) { bookedMapCount[dot] = (bookedMapCount[dot] || 0) + 1; }
       }
 
@@ -113,15 +108,12 @@ export async function onRequest(context) {
       
       const dataRows = [];
       body.ds_nguoi.forEach(nguoi => {
-          // Ghi mỗi người 1 dòng
           dataRows.push([timestamp, 1, nguoi.name, nguoi.yob, `'${body.phone}`, `'${body.phone_backup}`, body.dot_tham_gia, "TRUE", body.bill_url, bookingId]);
       });
       
-      // Lệnh gọi duy nhất tiêu tốn API Google: Ném vào Data
       const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
       await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Data!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: dataRows }) });
 
-      // NHÉT LUÔN BẢN GHI NÀY VÀO TỦ KÍNH KV ĐỂ KHÁCH TRA CỨU ĐƯỢC NGAY (CHƯA CẦN BẠN ĐỒNG BỘ)
       const currentDataStr = await env.TRIP_KV.get('CACHE_DATA');
       if (currentDataStr) {
           let currentData = JSON.parse(currentDataStr);
@@ -164,26 +156,46 @@ export async function onRequest(context) {
           bookingsMap[bId].ds_nguoi.push({name: r[2], yob: r[3]});
       });
 
-      // Lấy trạng thái từ Shortlist trong tủ kính KV
+      // Tự động tính lại số tiền cho TẤT CẢ booking (Phòng trường hợp Shortlist chưa cập nhật)
+      const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
+      const dataConfigValues = configValuesStr ? JSON.parse(configValuesStr) : [];
+      let fixedCost = 0, schemeVal = 0, slKhuyenMai = 999;
+      if (dataConfigValues.length > 0) {
+          const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
+          const parseNum = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
+          const row2 = dataConfigValues[1] || [];
+          fixedCost = parseNum(row2[configHeaders.indexOf('Vé 1 người')]);
+          slKhuyenMai = parseNum(row2[configHeaders.indexOf('SL khuyến mãi')]) || 999;
+          schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
+      }
+
+      Object.values(bookingsMap).forEach(b => {
+          if (b.sl >= slKhuyenMai) {
+              b.money = (fixedCost - schemeVal) * b.sl;
+          } else {
+              b.money = fixedCost * b.sl;
+          }
+      });
+
+      // Kiểm tra trạng thái từ Shortlist
       const shortValuesStr = await env.TRIP_KV.get('CACHE_SHORTLIST');
       const shortDataValues = shortValuesStr ? JSON.parse(shortValuesStr) : [];
       for(let i = 1; i < shortDataValues.length; i++) {
           let sId = shortDataValues[i][0];
           if(bookingsMap[sId]) {
               bookingsMap[sId].isChecked = (shortDataValues[i][3] === "TRUE");
-              bookingsMap[sId].money = parseInt(String(shortDataValues[i][2]).replace(/[^\d]/g, '')) || 0;
           }
       }
 
-      // Tách nhóm (Thanh toán vs Đang chờ)
+      // Tách nhóm
       let paidGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
-      let pendGrp = { bIds: [], totalSl: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
+      let pendGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
 
       Object.values(bookingsMap).forEach(b => {
           let target = b.isChecked ? paidGrp : pendGrp;
           target.bIds.push(b.bId);
           target.totalSl += b.sl;
-          if(b.isChecked) target.totalMoney += b.money;
+          target.totalMoney += b.money; // Bây giờ cả Pending và Paid đều được cộng tiền
           target.ds_nguoi.push(...b.ds_nguoi);
           target.dots.add(b.dot);
       });
@@ -191,26 +203,21 @@ export async function onRequest(context) {
       paidGrp.dots = Array.from(paidGrp.dots);
       pendGrp.dots = Array.from(pendGrp.dots);
 
-      // Nhặt Link Zalo từ Config trong Tủ Kính
       let zaloLinks = [];
-      if (paidGrp.bIds.length > 0) {
-          const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
-          const dataConfigValues = configValuesStr ? JSON.parse(configValuesStr) : [];
-          if (dataConfigValues.length > 0) {
-              const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
-              const idxTenDot = configHeaders.indexOf('Nội dung option');
-              const idxZalo = configHeaders.indexOf('Link Zalo');
-              
-              if(idxTenDot !== -1 && idxZalo !== -1) {
-                  paidGrp.dots.forEach(d => {
-                      for(let r=1; r<dataConfigValues.length; r++) {
-                          if(dataConfigValues[r][idxTenDot] === d && dataConfigValues[r][idxZalo]) {
-                              zaloLinks.push(dataConfigValues[r][idxZalo]);
-                              break;
-                          }
+      if (paidGrp.bIds.length > 0 && dataConfigValues.length > 0) {
+          const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
+          const idxTenDot = configHeaders.indexOf('Nội dung option');
+          const idxZalo = configHeaders.indexOf('Link Zalo');
+          
+          if(idxTenDot !== -1 && idxZalo !== -1) {
+              paidGrp.dots.forEach(d => {
+                  for(let r=1; r<dataConfigValues.length; r++) {
+                      if(dataConfigValues[r][idxTenDot] === d && dataConfigValues[r][idxZalo]) {
+                          zaloLinks.push(dataConfigValues[r][idxZalo]);
+                          break;
                       }
-                  });
-              }
+                  }
+              });
           }
       }
 
