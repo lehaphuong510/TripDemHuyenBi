@@ -7,11 +7,13 @@ export async function onRequest(context) {
   try {
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
+      
       if (authHeader !== 'Bearer 0519') {
         return new Response('Unauthorized', { status: 401 });
       }
 
       const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
+      
       const resConfig = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z?majorDimension=ROWS`, { headers: { Authorization: `Bearer ${token}` } });
       const dataConfig = await resConfig.json();
       
@@ -80,13 +82,9 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ====================================================================
-    // THUẬT TOÁN TÍNH TIỀN LŨY KẾ Ở BƯỚC GIỮ CHỖ
-    // ====================================================================
     if (url.pathname === '/api/hold' && request.method === 'POST') {
         const { dot, sl, phone } = await request.json();
         
-        // Bốc config ra để lấy giá trị n, m
         const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
         const configValues = configValuesStr ? JSON.parse(configValuesStr) : [];
         let fixedCost = 0, schemeVal = 0, slKhuyenMai = 999;
@@ -99,7 +97,6 @@ export async function onRequest(context) {
             schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
         }
 
-        // Bốc lịch sử (n) của SĐT này cho Đợt này
         let cleanPhone = (phone || "").trim().replace(/^0+/, '');
         const dataValuesStr = await env.TRIP_KV.get('CACHE_DATA');
         const dataRows = dataValuesStr ? JSON.parse(dataValuesStr) : [];
@@ -118,20 +115,15 @@ export async function onRequest(context) {
         let isDiscountCross = false;
         let discountValue = 0;
 
-        // Áp dụng luật tính nhẩm
         if (nCount < slKhuyenMai && (nCount + m) >= slKhuyenMai) {
-            // Trường hợp A: Vượt mốc -> Trừ dồn phần của n
             finalCost = (m * fixedCost) - ((nCount + m) * schemeVal);
             isDiscountCross = true;
             discountValue = (nCount + m) * schemeVal;
         } else if (nCount >= slKhuyenMai) {
-            // Trường hợp B: Đã đạt mốc từ trước -> Chỉ giảm phần của m
             finalCost = m * (fixedCost - schemeVal);
-            // Vẫn coi là có discount để báo cho khách
             isDiscountCross = true;
             discountValue = m * schemeVal;
         } else {
-            // Trường hợp C: Vẫn chưa đạt mốc
             finalCost = m * fixedCost;
         }
 
@@ -160,7 +152,16 @@ export async function onRequest(context) {
       const currentDataStr = await env.TRIP_KV.get('CACHE_DATA');
       if (currentDataStr) {
           let currentData = JSON.parse(currentDataStr);
-          currentData.push(...dataRows); 
+          
+          // SỬA LỖI TẠI ĐÂY: Lưu SĐT vào tủ kính không có dấu nháy đơn để hàm Tra cứu không bị lỗi
+          let dataRowsNoQuote = dataRows.map(row => {
+              let newRow = [...row];
+              newRow[4] = newRow[4].replace(/'/g, ''); 
+              newRow[5] = newRow[5].replace(/'/g, ''); 
+              return newRow;
+          });
+          
+          currentData.push(...dataRowsNoQuote); 
           await env.TRIP_KV.put('CACHE_DATA', JSON.stringify(currentData));
       }
 
@@ -200,7 +201,6 @@ export async function onRequest(context) {
           schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
       }
 
-      // Map Trạng Thái từ Shortlist
       const shortValuesStr = await env.TRIP_KV.get('CACHE_SHORTLIST');
       const shortDataValues = shortValuesStr ? JSON.parse(shortValuesStr) : [];
       let shortMap = {};
@@ -208,7 +208,6 @@ export async function onRequest(context) {
           shortMap[shortDataValues[i][0]] = (shortDataValues[i][3] === "TRUE");
       }
 
-      // Nhóm theo Đợt -> Lọc Paid/Pending
       let paidMapByDot = {};
       let pendMapByDot = {};
 
@@ -227,7 +226,6 @@ export async function onRequest(context) {
           targetMap[dot].bIds.add(bId);
       });
 
-      // Hàm tính tổng tiền cho 1 Đợt (Dựa vào tổng n người của Đợt đó)
       const calculateDotMoney = (dotData) => {
           if (dotData.sl >= slKhuyenMai) {
               return (fixedCost - schemeVal) * dotData.sl;
