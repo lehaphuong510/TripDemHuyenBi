@@ -5,9 +5,6 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   try {
-    // ====================================================================
-    // 1. API ĐỒNG BỘ: NHẬN LỆNH TỪ GOOGLE SHEETS (GAS) BẮN XUỐNG
-    // ====================================================================
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
       
@@ -33,9 +30,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ success: true, message: "Đồng bộ thành công!" }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ====================================================================
-    // 2. LOAD THẺ TRANG CHỦ (CHỈ ĐỌC TỪ TỦ KÍNH KV)
-    // ====================================================================
     if (url.pathname === '/api/config' && request.method === 'GET') {
       const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
       if (!configValuesStr) throw new Error("Chưa có dữ liệu. Vui lòng vào Google Sheet bấm nút Đồng bộ lần đầu!");
@@ -88,9 +82,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ====================================================================
-    // 3. API GIỮ CHỖ TẠM THỜI (LƯU KV 15 PHÚT)
-    // ====================================================================
     if (url.pathname === '/api/hold' && request.method === 'POST') {
         const { dot, sl } = await request.json();
         const holdId = "HOLD-" + Date.now();
@@ -98,9 +89,6 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({ success: true, holdId }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ====================================================================
-    // 4. KHÁCH SUBMIT (GHI VÀO GOOGLE SHEET & CẬP NHẬT KV ĐỂ TRA CỨU LIỀN)
-    // ====================================================================
     if (url.pathname === '/api/submit' && request.method === 'POST') {
       const body = await request.json();
       const timestamp = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
@@ -126,7 +114,7 @@ export async function onRequest(context) {
     }
 
     // ====================================================================
-    // 5. TRA CỨU (CHỈ ĐỌC TỪ TỦ KÍNH KV)
+    // 5. TRA CỨU: TRẢ VỀ MẢNG bookings ĐỂ TÁCH CHIA TRÊN GIAO DIỆN
     // ====================================================================
     if (url.pathname === '/api/lookup' && request.method === 'POST') {
       const { phone } = await request.json();
@@ -145,18 +133,16 @@ export async function onRequest(context) {
       let rawName = matched[0][2] || "Anh/Chị";
       let firstName = rawName.split('-')[0].trim().split(' ').pop(); 
 
-      // Nhóm dòng theo mã Booking ID
       let bookingsMap = {};
       matched.forEach(r => {
           let bId = r[9];
           if(!bookingsMap[bId]) {
-              bookingsMap[bId] = { bId: bId, dot: r[6], sl: 0, ds_nguoi: [], phoneDisplay: matched[0][4], isChecked: false, money: 0 };
+              bookingsMap[bId] = { bId: bId, dot: r[6], sl: 0, ds_nguoi: [], isChecked: false, money: 0 };
           }
-          bookingsMap[bId].sl += 1; // COUNT
+          bookingsMap[bId].sl += 1;
           bookingsMap[bId].ds_nguoi.push({name: r[2], yob: r[3]});
       });
 
-      // Tự động tính lại số tiền cho TẤT CẢ booking (Phòng trường hợp Shortlist chưa cập nhật)
       const configValuesStr = await env.TRIP_KV.get('CACHE_CONFIG');
       const dataConfigValues = configValuesStr ? JSON.parse(configValuesStr) : [];
       let fixedCost = 0, schemeVal = 0, slKhuyenMai = 999;
@@ -177,7 +163,6 @@ export async function onRequest(context) {
           }
       });
 
-      // Kiểm tra trạng thái từ Shortlist
       const shortValuesStr = await env.TRIP_KV.get('CACHE_SHORTLIST');
       const shortDataValues = shortValuesStr ? JSON.parse(shortValuesStr) : [];
       for(let i = 1; i < shortDataValues.length; i++) {
@@ -187,30 +172,25 @@ export async function onRequest(context) {
           }
       }
 
-      // Tách nhóm
-      let paidGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
-      let pendGrp = { bIds: [], totalSl: 0, totalMoney: 0, ds_nguoi: [], dots: new Set(), phoneDisplay: matched[0][4] };
+      let paidGrp = { bookings: [], totalSl: 0, totalMoney: 0, phoneDisplay: matched[0][4] };
+      let pendGrp = { bookings: [], totalSl: 0, totalMoney: 0, phoneDisplay: matched[0][4] };
 
       Object.values(bookingsMap).forEach(b => {
           let target = b.isChecked ? paidGrp : pendGrp;
-          target.bIds.push(b.bId);
+          target.bookings.push(b);
           target.totalSl += b.sl;
-          target.totalMoney += b.money; // Bây giờ cả Pending và Paid đều được cộng tiền
-          target.ds_nguoi.push(...b.ds_nguoi);
-          target.dots.add(b.dot);
+          target.totalMoney += b.money;
       });
 
-      paidGrp.dots = Array.from(paidGrp.dots);
-      pendGrp.dots = Array.from(pendGrp.dots);
-
+      let paidDots = new Set(paidGrp.bookings.map(b => b.dot));
       let zaloLinks = [];
-      if (paidGrp.bIds.length > 0 && dataConfigValues.length > 0) {
+      if (paidGrp.bookings.length > 0 && dataConfigValues.length > 0) {
           const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
           const idxTenDot = configHeaders.indexOf('Nội dung option');
           const idxZalo = configHeaders.indexOf('Link Zalo');
           
           if(idxTenDot !== -1 && idxZalo !== -1) {
-              paidGrp.dots.forEach(d => {
+              Array.from(paidDots).forEach(d => {
                   for(let r=1; r<dataConfigValues.length; r++) {
                       if(dataConfigValues[r][idxTenDot] === d && dataConfigValues[r][idxZalo]) {
                           zaloLinks.push(dataConfigValues[r][idxZalo]);
