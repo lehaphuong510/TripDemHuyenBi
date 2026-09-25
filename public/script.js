@@ -272,10 +272,14 @@ function resetRegistrationForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// XỬ LÝ RENDER VIEW CHO TRA CỨU
+// ==========================================
+// RENDER KHỐI TRA CỨU MỚI (TÁCH/GỘP - FLEX)
+// ==========================================
 function renderLookupBlock(blockData, type) {
     let dsHtml = `<table class="result-table"><tr><th style="text-align:left;">HỌ VÀ TÊN</th><th style="text-align:center;">NĂM SINH</th></tr>`;
-    blockData.ds_nguoi.forEach(ng => { dsHtml += `<tr><td style="text-align:left;"><b>${ng.name}</b></td><td style="text-align:center;">${ng.yob}</td></tr>`; });
+    blockData.ds_nguoi.forEach(ng => { 
+        dsHtml += `<tr><td style="text-align:left;"><b style="color: var(--glow-yellow);">${ng.name}</b></td><td style="text-align:center; color: white;">${ng.yob}</td></tr>`; 
+    });
     dsHtml += `</table>`;
 
     let dotStr = Array.from(blockData.dots).join(" | ");
@@ -283,18 +287,18 @@ function renderLookupBlock(blockData, type) {
 
     if(type === 'paid') {
         return `
-            <div class="glass-box" style="text-align:left; background:rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 0; overflow: hidden; margin-bottom: 20px;">
+            <div class="glass-box" style="flex: 1; min-width: 280px; text-align:left; background:rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 0; overflow: hidden; margin-bottom: 0; display: flex; flex-direction: column;">
                 <div style="background: rgba(25, 135, 84, 0.9); padding: 15px; text-align: center; border-bottom: 2px solid var(--glow-yellow);">
                     <h3 style="color: var(--glow-yellow); margin: 0; font-size: 1.4rem; text-transform: uppercase;">
-                        <img src="assets/images/tick.png" style="width:24px; vertical-align:middle; margin-right:5px;"> BTC ĐÃ NHẬN ĐƯỢC THANH TOÁN
+                        <img src="assets/images/tick.png" style="width:24px; vertical-align:middle; margin-right:5px;"> ĐÃ NHẬN THANH TOÁN
                     </h3>
                     <div style="color: white; font-size: 1.1rem; margin-top: 5px;">Tổng số tiền đã nhận: <span style="color: var(--glow-yellow); font-weight: 900;">${blockData.totalMoney.toLocaleString('vi-VN')} VNĐ</span></div>
                 </div>
-                <div style="padding: 20px;">
+                <div style="padding: 20px; flex: 1;">
                     <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:15px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
                     <div style="margin-bottom:8px; color: white;">Mã Booking: <b style="color: var(--glow-yellow);">${bIdsStr}</b></div>
                     <div style="margin-bottom:8px; color: white;">Đợt tham gia: <b style="color: var(--glow-yellow);">${dotStr}</b></div>
-                    <div style="margin-bottom:8px; color: white;">SĐT người đại diện: <b style="color: white;">${blockData.phoneDisplay}</b></div>
+                    <div style="margin-bottom:8px; color: white;">SĐT người đại diện: <b style="color: var(--glow-yellow);">${blockData.phoneDisplay}</b></div>
                     <div style="margin-bottom:15px; color: white;">Tổng số lượng: <b style="color: var(--glow-yellow);">${blockData.totalSl} người</b></div>
                     ${dsHtml}
                 </div>
@@ -302,17 +306,17 @@ function renderLookupBlock(blockData, type) {
         `;
     } else {
         return `
-            <div class="glass-box" style="text-align:left; background:rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 0; overflow: hidden; margin-bottom: 20px;">
+            <div class="glass-box" style="flex: 1; min-width: 280px; text-align:left; background:rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 0; overflow: hidden; margin-bottom: 0; display: flex; flex-direction: column;">
                 <div style="background: rgba(255, 193, 7, 0.8); padding: 15px; text-align: center; border-bottom: 2px solid #FFF;">
                     <h3 style="color: #091221; margin: 0; font-size: 1.4rem; text-transform: uppercase;">
-                        ⏳ ĐANG CHỜ ĐỐI SOÁT
+                        <img src="assets/images/donghocat.png" style="width:24px; vertical-align:middle; margin-right:5px; filter: brightness(0.1);"> ĐANG CHỜ ĐỐI SOÁT
                     </h3>
                 </div>
-                <div style="padding: 20px;">
+                <div style="padding: 20px; flex: 1;">
                     <b style="color: var(--glow-yellow); font-size: 1.1rem; display:block; margin-bottom:15px; text-transform: uppercase;">THÔNG TIN ĐĂNG KÝ:</b>
                     <div style="margin-bottom:8px; color: white;">Mã Booking: <b style="color: var(--glow-yellow);">${bIdsStr}</b></div>
                     <div style="margin-bottom:8px; color: white;">Đợt tham gia: <b style="color: var(--glow-yellow);">${dotStr}</b></div>
-                    <div style="margin-bottom:8px; color: white;">SĐT người đại diện: <b style="color: white;">${blockData.phoneDisplay}</b></div>
+                    <div style="margin-bottom:8px; color: white;">SĐT người đại diện: <b style="color: var(--glow-yellow);">${blockData.phoneDisplay}</b></div>
                     <div style="margin-bottom:15px; color: white;">Tổng số lượng: <b style="color: var(--glow-yellow);">${blockData.totalSl} người</b></div>
                     ${dsHtml}
                 </div>
@@ -334,34 +338,36 @@ async function lookupBooking() {
         
         if (!data.success) { resultDiv.innerHTML = `<div class="glass-box" style="color:var(--glow-yellow); border-color:#f44336; text-align:center;">${data.message}</div>`; return; }
 
-        let finalHtml = "";
+        // Bọc Flexbox chia cột để render ra 2 block song song trên Laptop
+        let blocksHtml = `<div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; justify-content: center; width: 100%;">`;
+        let zaloHtml = "";
         
-        // Nếu có group thanh toán thành công
         if (data.paid && data.paid.bIds.length > 0) {
-            finalHtml += renderLookupBlock(data.paid, 'paid');
-            createFireflies(); // Gọi đom đóm
+            blocksHtml += renderLookupBlock(data.paid, 'paid');
+            createFireflies(); 
             
-            // Xử lý link Zalo (Lấy link đầu tiên tìm thấy)
             if (data.zaloLinks && data.zaloLinks.length > 0) {
-                finalHtml += `
-                    <div class="zalo-banner">
-                        🚨 QUAN TRỌNG: ANH CHỊ NHỚ VÀO GROUP ZALO ĐỂ TIỆN THEO DÕI THÔNG BÁO NHA! 🚨<br>
+                zaloHtml = `
+                    <div class="zalo-banner" style="width: 100%; box-sizing: border-box;">
+                        <span style="color: var(--glow-yellow);">🚨 QUAN TRỌNG: ANH CHỊ NHỚ VÀO GROUP ZALO ĐỂ TIỆN THEO DÕI THÔNG BÁO NHA! 🚨</span><br>
                         <a href="${data.zaloLinks[0]}" target="_blank">👉 BẤM VÀO ĐÂY ĐỂ THAM GIA GROUP 👈</a>
                     </div>
                 `;
             }
         }
 
-        // Nếu có group đang chờ đối soát
         if (data.pending && data.pending.bIds.length > 0) {
-            finalHtml += renderLookupBlock(data.pending, 'pending');
+            blocksHtml += renderLookupBlock(data.pending, 'pending');
         }
+
+        blocksHtml += `</div>`; // Đóng flex container
 
         resultDiv.innerHTML = `
             <div style="text-align:center; padding-bottom:15px; margin-bottom:15px;">
                 <p style="font-size: 1.1rem; margin:0;">Hệ thống đã nhận được đăng ký của anh/chị <b style="color:var(--glow-yellow); text-transform:uppercase;">${data.firstName}</b>.</p>
             </div>
-            ${finalHtml}
+            ${blocksHtml}
+            ${zaloHtml}
         `;
     } catch (err) { resultDiv.innerHTML = `<div class="glass-box" style="color:red; text-align:center;">Lỗi kết nối máy chủ.</div>`; }
 }
