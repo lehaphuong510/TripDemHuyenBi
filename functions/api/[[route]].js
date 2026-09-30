@@ -5,9 +5,6 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   try {
-    // ====================================================================
-    // ADMIN: TẢI TOÀN BỘ DATA (0 COST GOOGLE API)
-    // ====================================================================
     if (url.pathname === '/api/admin/data' && request.method === 'GET') {
       const authHeader = request.headers.get('Authorization');
       if (authHeader !== 'Bearer 0519') return new Response('Unauthorized', { status: 401 });
@@ -21,9 +18,6 @@ export async function onRequest(context) {
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ====================================================================
-    // ADMIN: LƯU CẤU HÌNH ĐÈ LÊN GOOGLE SHEET (TỐN 1 LỆNH GOOGLE)
-    // ====================================================================
     if (url.pathname === '/api/admin/update' && request.method === 'POST') {
         const authHeader = request.headers.get('Authorization');
         if (authHeader !== 'Bearer 0519') return new Response('Unauthorized', { status: 401 });
@@ -31,7 +25,6 @@ export async function onRequest(context) {
         const body = await request.json(); 
         const token = await getGoogleAuthToken(env.GCP_EMAIL, env.GCP_KEY);
         
-        // Cập nhật Google Sheet (clear rồi put)
         await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A:Z:clear`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
         await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A1?valueInputOption=USER_ENTERED`, {
             method: 'PUT',
@@ -39,14 +32,9 @@ export async function onRequest(context) {
             body: JSON.stringify({ values: body.values })
         });
         
-        // Cập nhật ngay vào Tủ kính KV
         await env.TRIP_KV.put('CACHE_CONFIG', JSON.stringify(body.values));
         return new Response(JSON.stringify({success: true}), {headers: {'Content-Type': 'application/json'}});
     }
-
-    // ====================================================================
-    // CÁC API KHÁCH HÀNG BÊN DƯỚI ĐƯỢC GIỮ NGUYÊN HOÀN TOÀN
-    // ====================================================================
 
     if (url.pathname === '/api/sync' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization');
@@ -76,7 +64,10 @@ export async function onRequest(context) {
       const configValues = JSON.parse(configValuesStr);
 
       const headers = configValues[0].map(h => h ? h.toString().trim() : "");
+      
+      // Tích hợp tìm Dynamic Mapping
       const idxTenDot = headers.indexOf('Nội dung option');
+      const idxNgayKH = headers.indexOf('Ngày khởi hành');
       const idxGioiHan = headers.indexOf('SL giới hạn');
       const idxCost = headers.indexOf('Vé 1 người');
       const idxSLKM = headers.indexOf('SL khuyến mãi');
@@ -85,9 +76,9 @@ export async function onRequest(context) {
       const parseNumber = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
 
       const row2 = configValues[1] || [];
-      const fixedCost = parseNumber(row2[idxCost]);
-      const slKhuyenMai = parseNumber(row2[idxSLKM]);
-      const schemeKhuyenMai = parseNumber(row2[idxSchemeKM]);
+      const fixedCost = idxCost !== -1 ? parseNumber(row2[idxCost]) : 0;
+      const slKhuyenMai = idxSLKM !== -1 ? parseNumber(row2[idxSLKM]) : 999;
+      const schemeKhuyenMai = idxSchemeKM !== -1 ? parseNumber(row2[idxSchemeKM]) : 0;
       
       let options = [];
 
@@ -114,9 +105,12 @@ export async function onRequest(context) {
       } catch(e) {} 
 
       for (let i = 1; i < configValues.length; i++) {
-        let dotName = configValues[i][idxTenDot];
+        let dotName = idxTenDot !== -1 ? configValues[i][idxTenDot] : "";
+        let startDate = idxNgayKH !== -1 ? configValues[i][idxNgayKH] : "";
+        let limit = idxGioiHan !== -1 ? parseNumber(configValues[i][idxGioiHan]) : 0;
+
         if (dotName && dotName.trim() !== "") {
-            options.push({ name: dotName, limit: parseNumber(configValues[i][idxGioiHan]), booked: bookedMapCount[dotName] || 0, held: heldMap[dotName] || 0 });
+            options.push({ name: dotName, startDate: startDate, limit: limit, booked: bookedMapCount[dotName] || 0, held: heldMap[dotName] || 0 });
         }
       }
       return new Response(JSON.stringify({ fixedCost, slKhuyenMai, schemeKhuyenMai, options }), { headers: { 'Content-Type': 'application/json' } });
@@ -132,9 +126,10 @@ export async function onRequest(context) {
             const configHeaders = configValues[0].map(h => h ? h.toString().trim() : "");
             const parseNum = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
             const row2 = configValues[1] || [];
-            fixedCost = parseNum(row2[configHeaders.indexOf('Vé 1 người')]);
-            slKhuyenMai = parseNum(row2[configHeaders.indexOf('SL khuyến mãi')]) || 999;
-            schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
+            
+            let idxC = configHeaders.indexOf('Vé 1 người'); if(idxC !== -1) fixedCost = parseNum(row2[idxC]);
+            let idxS = configHeaders.indexOf('SL khuyến mãi'); if(idxS !== -1) slKhuyenMai = parseNum(row2[idxS]) || 999;
+            let idxK = configHeaders.indexOf('Scheme khuyến mãi'); if(idxK !== -1) schemeVal = parseNum(row2[idxK]);
         }
 
         let cleanPhone = (phone || "").trim().replace(/^0+/, '');
@@ -230,9 +225,10 @@ export async function onRequest(context) {
           const configHeaders = dataConfigValues[0].map(h => h ? h.toString().trim() : "");
           const parseNum = (val) => val ? parseInt(String(val).replace(/[^\d]/g, '')) || 0 : 0;
           const row2 = dataConfigValues[1] || [];
-          fixedCost = parseNum(row2[configHeaders.indexOf('Vé 1 người')]);
-          slKhuyenMai = parseNum(row2[configHeaders.indexOf('SL khuyến mãi')]) || 999;
-          schemeVal = parseNum(row2[configHeaders.indexOf('Scheme khuyến mãi')]);
+          
+          let idxC = configHeaders.indexOf('Vé 1 người'); if(idxC !== -1) fixedCost = parseNum(row2[idxC]);
+          let idxS = configHeaders.indexOf('SL khuyến mãi'); if(idxS !== -1) slKhuyenMai = parseNum(row2[idxS]) || 999;
+          let idxK = configHeaders.indexOf('Scheme khuyến mãi'); if(idxK !== -1) schemeVal = parseNum(row2[idxK]);
       }
 
       const shortValuesStr = await env.TRIP_KV.get('CACHE_SHORTLIST');
