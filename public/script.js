@@ -23,6 +23,20 @@ function loadYoutube() {
     container.innerHTML = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/AqoJWlIdqng?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 12px;"></iframe>`;
 }
 
+// HÀM HỖ TRỢ ĐỊNH DẠNG NGÀY THÁNG
+function parseVnDate(dateStr) {
+    if(!dateStr) return null;
+    let parts = dateStr.split('/');
+    if(parts.length === 3) { return new Date(parts[2], parts[1] - 1, parts[0]); }
+    return null;
+}
+function formatDateToDayStr(dateStr) {
+    let d = parseVnDate(dateStr);
+    if(!d) return "";
+    let days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    return `${dateStr} (${days[d.getDay()]})`;
+}
+
 // ================= CORE BOOKING LOGIC =================
 async function loadSlots(isInit = false) {
     const container = document.getElementById('slot-container');
@@ -47,12 +61,17 @@ async function loadSlots(isInit = false) {
                 const booked = parseInt(opt.booked) || 0;
                 const held = parseInt(opt.held) || 0;
                 const available = Math.max(0, total - booked - held);
+                
+                // HIỂN THỊ TÊN ĐỢT KÈM NGÀY THÁNG
+                let displayName = opt.name;
+                if(opt.startDate) { displayName = `${opt.name} - ${formatDateToDayStr(opt.startDate)}`; }
+
                 const card = document.createElement('div');
                 card.className = 'slot-card';
                 if(currentSelected === opt.name) { card.classList.add('selected'); document.getElementById('selectedDotMax').value = available; }
-                card.onclick = () => selectSlot(card, opt.name, available);
+                card.onclick = () => selectSlot(card, opt.name, available, opt.startDate);
                 card.innerHTML = `
-                    <h3>${opt.name}</h3>
+                    <h3>${displayName}</h3>
                     <div class="slot-available">Còn ${available} suất</div>
                     <div class="slot-breakdown">
                         <span style="display:flex; align-items:center; gap:5px; color:#a5d6a7;"><img src="assets/images/tick.png" style="width:16px;"> Đã ĐK: ${booked}</span>
@@ -67,12 +86,14 @@ async function loadSlots(isInit = false) {
 
 document.addEventListener("DOMContentLoaded", async () => { await loadSlots(true); });
 
-function selectSlot(cardEl, dotName, available) {
+function selectSlot(cardEl, dotName, available, startDateStr) {
     if (available <= 0) { alert("Rất tiếc, đợt này đã hết suất hoặc đang được giữ!"); return; }
     document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
     cardEl.classList.add('selected');
     document.getElementById('selectedDot').value = dotName;
     document.getElementById('selectedDotMax').value = available;
+    // Lưu tạm ngày khởi hành để lát check tuổi
+    document.getElementById('selectedDot').setAttribute('data-startdate', startDateStr || ""); 
     const numInput = document.getElementById('numPeople');
     numInput.max = available;
     if (parseInt(numInput.value) > available) numInput.value = available;
@@ -99,7 +120,7 @@ function renderParticipants() {
                 <div style="font-weight:bold; color:var(--glow-yellow); margin-bottom:8px; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><img src="assets/images/age.png" style="width:20px;"> Người thứ ${i}</div>
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
                     <input type="text" id="name_${i}" placeholder="Họ và tên" style="flex:2; min-width:150px;">
-                    <input type="number" id="yob_${i}" placeholder="Năm sinh" style="flex:1; min-width:100px;">
+                    <input type="date" id="yob_${i}" placeholder="Ngày sinh" style="flex:1; min-width:150px;">
                 </div>
             </div>`;
     }
@@ -107,16 +128,33 @@ function renderParticipants() {
 
 async function holdSlotAndPay() {
     const dot = document.getElementById('selectedDot').value;
+    const startDateStr = document.getElementById('selectedDot').getAttribute('data-startdate');
     const phone = document.getElementById('phoneInput').value;
     const num = parseInt(document.getElementById('numPeople').value);
-    const maxAllowedYear = new Date().getFullYear() - 5;
     
     if (!phone) { alert("Vui lòng nhập SĐT liên hệ!"); return; }
+    
+    // TÍNH TUỔI THEO MỐC NGÀY ĐI TOUR
+    let startDateObj = parseVnDate(startDateStr);
+    if (!startDateObj) {
+        alert("Đợt này chưa được cài đặt ngày khởi hành. Vui lòng liên hệ Admin!");
+        return;
+    }
+
     for(let i = 1; i <= num; i++) {
         let nameVal = document.getElementById(`name_${i}`).value.trim();
-        let yobVal = document.getElementById(`yob_${i}`).value.trim();
-        if (!nameVal || !yobVal) { alert(`Vui lòng nhập đầy đủ Tên và Năm sinh cho người thứ ${i}!`); return; }
-        if (parseInt(yobVal) > maxAllowedYear) { alert(`Người thứ ${i} chưa đủ 5 tuổi (Năm sinh phải từ ${maxAllowedYear} trở về trước).`); return; }
+        let yobVal = document.getElementById(`yob_${i}`).value; // Format: YYYY-MM-DD
+        
+        if (!nameVal || !yobVal) { alert(`Vui lòng nhập đầy đủ Tên và Ngày sinh cho người thứ ${i}!`); return; }
+        
+        let birthDateObj = new Date(yobVal);
+        let ageInMs = startDateObj.getTime() - birthDateObj.getTime();
+        let ageInYears = ageInMs / (1000 * 60 * 60 * 24 * 365.25);
+        
+        if (ageInYears < 5) { 
+            alert(`Người thứ ${i} chưa đủ 5 tuổi tính đến ngày khởi hành (${startDateStr}).\nTrip này chỉ dành cho người từ 5 tuổi trở lên ạ!`); 
+            return; 
+        }
     }
 
     const btn = document.getElementById('btnHold');
@@ -162,6 +200,14 @@ function startCountdown(duration) {
     }, 1000);
 }
 
+// CHUYỂN ĐỔI YYYY-MM-DD SANG DD/MM/YYYY
+function convertToVnDateStr(isoDate) {
+    if(!isoDate) return "";
+    let parts = isoDate.split('-');
+    if(parts.length !== 3) return isoDate;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
 async function submitFinalRegistration() {
     const fileInput = document.getElementById('billUpload');
     if (fileInput.files.length === 0) { alert("Vui lòng tải ảnh Bill!"); return; }
@@ -175,7 +221,10 @@ async function submitFinalRegistration() {
             btnSubmit.innerHTML = "ĐANG LƯU DỮ LIỆU... 🚀";
             const num = parseInt(document.getElementById('numPeople').value);
             let ds_nguoi = [];
-            for(let i=1; i<=num; i++) ds_nguoi.push({ name: document.getElementById(`name_${i}`).value, yob: document.getElementById(`yob_${i}`).value });
+            for(let i=1; i<=num; i++) {
+                let formattedDate = convertToVnDateStr(document.getElementById(`yob_${i}`).value);
+                ds_nguoi.push({ name: document.getElementById(`name_${i}`).value, yob: formattedDate });
+            }
             const payload = {
                 dot_tham_gia: document.getElementById('selectedDot').value, sl: num, ds_nguoi,
                 phone: document.getElementById('phoneInput').value, phone_backup: document.getElementById('phoneBackup').value,
@@ -208,7 +257,7 @@ function resetRegistrationForm() {
 function renderLookupBlock(blockData, type) {
     let dotsHtml = "";
     blockData.dotsGroup.forEach((d, index) => {
-        let dsHtml = `<table class="result-table"><tr><th style="text-align:left;">HỌ VÀ TÊN</th><th style="text-align:center;">NĂM SINH</th></tr>`;
+        let dsHtml = `<table class="result-table"><tr><th style="text-align:left;">HỌ VÀ TÊN</th><th style="text-align:center;">NGÀY SINH</th></tr>`;
         d.ds_nguoi.forEach(ng => { dsHtml += `<tr><td style="text-align:left;"><b style="color: var(--glow-yellow);">${ng.name}</b></td><td style="text-align:center; color: white;">${ng.yob}</td></tr>`; });
         dsHtml += `</table>`;
         dotsHtml += `
@@ -341,7 +390,6 @@ function processAdminData(dotFilter) {
 
     let stats = { pending: 0, paid: 0, revenue: 0, listPaid: [] };
 
-    // Gom Map booking theo Đợt để tính doanh thu theo luật Lũy kế y hệt luồng khách
     let bookingMap = {};
     filtered.forEach(r => {
         let bId = r[9]; let dot = r[6];
@@ -366,7 +414,6 @@ function processAdminData(dotFilter) {
         }
     });
     
-    // Tìm limit
     let limit = 0;
     if (dotFilter !== "All") {
         let r = adminFullData.config.find(row => row[configHeaders.indexOf('Nội dung option')] === dotFilter);
@@ -374,6 +421,13 @@ function processAdminData(dotFilter) {
     }
 
     return { stats, limit };
+}
+
+function parseIsoDateForInput(vnDateStr) {
+    if(!vnDateStr) return "";
+    let parts = vnDateStr.split('/');
+    if(parts.length !== 3) return "";
+    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 }
 
 function populateAdminUI() {
@@ -384,17 +438,14 @@ function populateAdminUI() {
         if (d && d.trim() !== "") dots.push(d);
     }
 
-    // Populate Selects
     let sel1 = document.getElementById('admin-dot-select');
     sel1.innerHTML = `<option value="All">Tất cả các đợt</option>` + dots.map(d => `<option value="${d}">${d}</option>`).join('');
     
     let sel2 = document.getElementById('admin-cost-select');
     sel2.innerHTML = dots.map(d => `<option value="${d}">${d}</option>`).join('');
 
-    // Render Tab 1
     renderAdminStats();
 
-    // Populate Tab 2 Checkboxes
     let costOptions = [];
     for(let i=1; i<adminFullData.config.length; i++) {
         let type = adminFullData.config[i][configHeaders.indexOf('Loại chi phí')];
@@ -408,7 +459,6 @@ function populateAdminUI() {
     
     renderAdminCost();
 
-    // Populate Tab 3 Forms
     let configRow = adminFullData.config[1] || [];
     document.getElementById('cfg-ve').value = parseMoneyAdmin(configRow[configHeaders.indexOf('Vé 1 người')]);
     document.getElementById('cfg-slkm').value = parseMoneyAdmin(configRow[configHeaders.indexOf('SL khuyến mãi')]);
@@ -416,11 +466,13 @@ function populateAdminUI() {
 
     let dotContainer = document.getElementById('cfg-dots-container');
     dotContainer.innerHTML = '';
-    for(let i=1; i<=2; i++) { // Max 2 Đợt for simplified UI matching Python
+    for(let i=1; i<=2; i++) { 
         let r = adminFullData.config[i] || [];
+        let dateVal = parseIsoDateForInput(r[configHeaders.indexOf('Ngày khởi hành')]);
         dotContainer.innerHTML += `
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px;" class="cfg-dot-row">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; align-items: center;" class="cfg-dot-row">
                 <input type="text" placeholder="Tên Đợt" value="${r[configHeaders.indexOf('Nội dung option')] || ''}" style="flex:2">
+                <input type="date" placeholder="Ngày KH" value="${dateVal}" style="flex:1.5">
                 <input type="number" placeholder="SL Limit" value="${parseMoneyAdmin(r[configHeaders.indexOf('SL giới hạn')])}" style="flex:1">
                 <input type="text" placeholder="Link Zalo" value="${r[configHeaders.indexOf('Link Zalo')] || ''}" style="flex:2">
             </div>`;
@@ -450,8 +502,11 @@ function appendCostRow(tbody, name='', unit='', type='Cố định') {
 
 function addConfigDot() {
     document.getElementById('cfg-dots-container').innerHTML += `
-        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px;" class="cfg-dot-row">
-            <input type="text" placeholder="Tên Đợt" style="flex:2"><input type="number" placeholder="SL Limit" style="flex:1"><input type="text" placeholder="Link Zalo" style="flex:2">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; align-items: center;" class="cfg-dot-row">
+            <input type="text" placeholder="Tên Đợt" style="flex:2">
+            <input type="date" placeholder="Ngày KH" style="flex:1.5">
+            <input type="number" placeholder="SL Limit" style="flex:1">
+            <input type="text" placeholder="Link Zalo" style="flex:2">
         </div>`;
 }
 function addConfigCost() { appendCostRow(document.getElementById('cfg-cost-body')); }
@@ -483,7 +538,7 @@ function renderAdminStats() {
         html += `
             <button class="btn-export" onclick="exportExcel('${dotFilter}')">📥 TẢI XUỐNG DANH SÁCH (EXCEL)</button>
             <h3 style="color: var(--glow-cyan); margin-top: 20px;">Danh sách khách chốt đơn</h3>
-            <table class="admin-table"><thead><tr><th>Họ và Tên</th><th>Năm sinh</th></tr></thead><tbody>`;
+            <table class="admin-table"><thead><tr><th>Họ và Tên</th><th>Ngày sinh</th></tr></thead><tbody>`;
         stats.listPaid.forEach(ng => { html += `<tr><td>${ng.name}</td><td>${ng.yob}</td></tr>`; });
         html += `</tbody></table>`;
     } else {
@@ -497,12 +552,11 @@ function exportExcel(dotFilter) {
     let wb = XLSX.utils.book_new();
     let wsData = [
         [`DANH SÁCH KHÁCH THAM GIA - ${dotFilter.toUpperCase()}`], [],
-        ["Họ và Tên", "Năm sinh"]
+        ["Họ và Tên", "Ngày sinh"]
     ];
     stats.listPaid.forEach(ng => wsData.push([ng.name, ng.yob]));
     let ws = XLSX.utils.aoa_to_sheet(wsData);
     
-    // Merge Tiêu đề
     if(!ws['!merges']) ws['!merges'] = [];
     ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } });
     
@@ -568,7 +622,8 @@ async function saveConfigToServer() {
     btn.innerHTML = "ĐANG LƯU... ⏳"; btn.disabled = true;
 
     try {
-        let headers = ["Nội dung option","SL giới hạn","Vé 1 người","SL khuyến mãi","Scheme khuyến mãi","Link Zalo","Thời gian CK","Thời gian Check","Chi phí tổ chức","Unit cost","Loại chi phí"];
+        // DYNAMIC MAPPING: Dùng chính header đang có của Tủ kính để nhét data, không lo lệch cột
+        let headers = adminFullData.config[0] || ["Nội dung option","Ngày khởi hành","SL giới hạn","Vé 1 người","SL khuyến mãi","Scheme khuyến mãi","Link Zalo","Thời gian CK","Thời gian Check","Chi phí tổ chức","Unit cost","Loại chi phí"];
         let newValues = [headers];
 
         let ve = document.getElementById('cfg-ve').value;
@@ -582,29 +637,27 @@ async function saveConfigToServer() {
         for(let i=0; i<maxLen; i++) {
             let row = new Array(headers.length).fill("");
             
-            // Fill general config on row 1
             if(i === 0) {
-                row[headers.indexOf('Vé 1 người')] = ve;
-                row[headers.indexOf('SL khuyến mãi')] = slkm;
-                row[headers.indexOf('Scheme khuyến mãi')] = schemekm;
-                row[headers.indexOf('Thời gian CK')] = "15";
-                row[headers.indexOf('Thời gian Check')] = "15";
+                let idxVe = headers.indexOf('Vé 1 người'); if(idxVe!==-1) row[idxVe] = ve;
+                let idxSlkm = headers.indexOf('SL khuyến mãi'); if(idxSlkm!==-1) row[idxSlkm] = slkm;
+                let idxSchemekm = headers.indexOf('Scheme khuyến mãi'); if(idxSchemekm!==-1) row[idxSchemekm] = schemekm;
+                let idxT1 = headers.indexOf('Thời gian CK'); if(idxT1!==-1) row[idxT1] = "15";
+                let idxT2 = headers.indexOf('Thời gian Check'); if(idxT2!==-1) row[idxT2] = "15";
             }
 
-            // Fill Dot data
             if(i < dotRows.length) {
                 let inputs = dotRows[i].querySelectorAll('input');
-                row[headers.indexOf('Nội dung option')] = inputs[0].value;
-                row[headers.indexOf('SL giới hạn')] = inputs[1].value;
-                row[headers.indexOf('Link Zalo')] = inputs[2].value;
+                let idxName = headers.indexOf('Nội dung option'); if(idxName!==-1) row[idxName] = inputs[0].value;
+                let idxDate = headers.indexOf('Ngày khởi hành'); if(idxDate!==-1) row[idxDate] = convertToVnDateStr(inputs[1].value);
+                let idxLim = headers.indexOf('SL giới hạn'); if(idxLim!==-1) row[idxLim] = inputs[2].value;
+                let idxZl = headers.indexOf('Link Zalo'); if(idxZl!==-1) row[idxZl] = inputs[3].value;
             }
 
-            // Fill Cost data
             if(i < costRows.length) {
                 let tdInp = costRows[i].querySelectorAll('input, select');
-                row[headers.indexOf('Chi phí tổ chức')] = tdInp[0].value;
-                row[headers.indexOf('Unit cost')] = tdInp[1].value;
-                row[headers.indexOf('Loại chi phí')] = tdInp[2].value;
+                let idxC1 = headers.indexOf('Chi phí tổ chức'); if(idxC1!==-1) row[idxC1] = tdInp[0].value;
+                let idxC2 = headers.indexOf('Unit cost'); if(idxC2!==-1) row[idxC2] = tdInp[1].value;
+                let idxC3 = headers.indexOf('Loại chi phí'); if(idxC3!==-1) row[idxC3] = tdInp[2].value;
             }
             newValues.push(row);
         }
@@ -618,7 +671,7 @@ async function saveConfigToServer() {
         
         if(data.success) {
             alert("✅ Đã cập nhật Cấu hình thành công lên Google Sheet & Hệ thống!");
-            await loadAdminData(); // Reload admin data silently
+            await loadAdminData(); 
         } else { alert("Lỗi lưu dữ liệu: " + data.message); }
     } catch(err) { alert("Lỗi kết nối!"); }
     
